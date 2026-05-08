@@ -1,0 +1,1575 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trace — Claim Intelligence Infrastructure</title>
+  <meta name="description" content="Trace · An instrument for contested public claims. Not a verdict. Not a summary. Coming soon, invite only." />
+
+  <meta property="og:title" content="Trace — Claim Intelligence Infrastructure" />
+  <meta property="og:description" content="An instrument for contested public claims. Not a verdict. Not a summary." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://traceintelligence.io" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400;1,9..144,500&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --paper:        #FAF8F3;
+      --paper-deep:   #F2EEE4;
+      --paper-glass:  rgba(250, 248, 243, 0.97);
+      --ink:          #1A1A1A;
+      --ink-soft:     #4A4A4A;
+      --ink-mute:     #8A8A8A;
+      --rule:         #D9D4C7;
+      --rule-soft:    #E8E4D8;
+      --primary:      #A03A2C;
+      --primary-soft: #C87769;
+      --primary-deep: #7A2C20;
+      --secondary:    #1C3A5E;
+      --warn:         #B8902E;
+      --warn-deep:    #8B6A20;
+      --good:         #5A6E48;
+      --muted:        #B7B0A0;
+
+      --serif: 'Fraunces', Georgia, serif;
+      --sans:  'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono:  'JetBrains Mono', 'SFMono-Regular', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      scroll-snap-type: y proximity;
+    }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: "kern" 1, "liga" 1;
+      overflow-x: hidden;
+    }
+    body.modal-open { overflow: hidden; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+
+    /* ---------------------------------------------------- */
+    /* HERO BRAND LINE — replaces the sticky nav bar         */
+    /* ---------------------------------------------------- */
+    .hero-brand {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      line-height: 1;
+    }
+    .hero-brand-wm {
+      font-family: var(--serif);
+      font-weight: 600;          /* match jsx — NOT italic */
+      font-size: 22px;
+      letter-spacing: -0.3px;
+      color: var(--hero-fg);
+      line-height: 1;
+    }
+    .hero-brand-divider {
+      width: 1px; height: 11px;
+      background: var(--hero-rule);
+      align-self: center;
+    }
+    .hero-brand-meta {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--hero-fg-mute);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .hero-brand-meta .accent { color: var(--hero-fg-soft); }
+    .hero-brand-meta .sep    { color: var(--hero-rule); margin: 0 7px; }
+
+    /* DEMO CTA — secondary, matches SUBMIT styling ------- */
+    .hero-demo-cta {
+      position: relative;
+      isolation: isolate;             /* stacking context for ::before fill */
+      overflow: hidden;
+      display: inline-flex; align-items: center; gap: 10px;
+      background: transparent;
+      color: var(--hero-fg-soft);
+      border: 1px solid var(--hero-rule);
+      padding: 11px 16px;          /* narrower */
+      border-radius: 2px;
+      font-family: var(--mono);
+      font-size: 10.5px; font-weight: 500;
+      letter-spacing: 1.4px; text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.34s ease, border-color 0.34s ease;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    /* Sliding fill — translateX(-101%) → 0 on hover */
+    .hero-demo-cta::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(242, 239, 229, 0.12);
+      transform: translateX(-101%);
+      transition: transform 0.42s cubic-bezier(0.65, 0, 0.25, 1);
+      z-index: 0;
+    }
+    .hero-demo-cta:hover::before {
+      transform: translateX(0);
+    }
+    /* Keep button content above the sliding fill */
+    .hero-demo-cta > * {
+      position: relative;
+      z-index: 1;
+    }
+    .hero-demo-cta:hover {
+      color: var(--hero-fg);
+      border-color: rgba(242, 239, 229, 0.32);
+    }
+
+    /* Arrow swap micro-interaction — current arrow exits right,
+       a fresh arrow slides in from the left. Used by both the DEMO
+       (currently no arrow, but selector generalized) and Submit buttons. */
+    .hero .btn-arr {
+      display: inline-block;
+      width: 1em; height: 1em;
+      line-height: 1;
+      overflow: hidden;
+      vertical-align: -0.04em;
+    }
+    .hero .btn-arr-track {
+      display: flex;
+      width: 200%;
+      height: 100%;
+      transform: translateX(-50%);
+      transition: transform 0.34s cubic-bezier(0.7, 0, 0.25, 1);
+    }
+    .hero .btn-arr-track > span {
+      flex: 0 0 50%;
+      display: block;
+      text-align: center;
+      line-height: 1;
+    }
+    .hero-demo-cta:hover .btn-arr-track,
+    .hero .field button:hover .btn-arr-track {
+      transform: translateX(0);
+    }
+
+    /* Glowing live indicator — bright mint pops on dark/translucent button */
+    .hero-demo-cta .pulse {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #88C99A;
+      box-shadow: 0 0 0 0 rgba(136, 201, 154, 0.7);
+      animation: ping 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes ping {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(136, 201, 154, 0.6); }
+      50%      { box-shadow: 0 0 0 5px rgba(136, 201, 154, 0); }
+    }
+
+    /* ---------------------------------------------------- */
+    /* HERO — dark theme, TV-static noise, poster layout     */
+    /* ---------------------------------------------------- */
+    .hero {
+      position: relative;
+      height: 100vh;       /* strict — fit above-fold exactly */
+      max-height: 100vh;
+      padding: clamp(28px, 4.5vh, 48px) 0;     /* horizontal padding moved to stage */
+      overflow: hidden;
+      background: #0E0E10;
+      color: #F2EFE5;
+      scroll-snap-align: start;
+
+      /* Dark-theme local tokens */
+      --hero-fg:        #F2EFE5;
+      --hero-fg-soft:   #C9C5BB;
+      --hero-fg-mute:   #807D74;
+      --hero-rule:      rgba(242, 239, 229, 0.16);
+      --hero-rule-soft: rgba(242, 239, 229, 0.08);
+      --hero-accent:    #DD8A7C;          /* brighter rust for dark bg */
+      --hero-accent-deep: #C87769;
+    }
+
+    .hero-stage {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: clamp(20px, 3.5vh, 40px);
+      padding-left: clamp(40px, 7vw, 100px);          /* left content edge */
+      padding-right: calc(64px + 48px);               /* rail width + 48px gap → DEMO/ver land here */
+    }
+
+    /* ---- Animated TV-static noise backdrop ----------------------------- */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .hero-bg .noise {
+      position: absolute; inset: -10%;
+      background-size: 220px 220px;
+      background-repeat: repeat;
+      opacity: 0;
+      mix-blend-mode: screen;
+      will-change: opacity, transform;
+    }
+    /* Three seeds of fractalNoise, swapped to create ~9fps shimmer flicker */
+    .hero-bg .n1 {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.93  0 0 0 0 0.86  0 0 0 0.85 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      animation: flickA 0.36s steps(1) infinite;
+    }
+    .hero-bg .n2 {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' seed='17' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.93  0 0 0 0 0.86  0 0 0 0.85 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      animation: flickB 0.36s steps(1) infinite;
+    }
+    .hero-bg .n3 {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='2' seed='29' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.93  0 0 0 0 0.86  0 0 0 0.85 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      animation: flickC 0.36s steps(1) infinite;
+    }
+    @keyframes flickA {
+      0%, 33%   { opacity: 0.32; transform: translate(0, 0); }
+      34%, 100% { opacity: 0; }
+    }
+    @keyframes flickB {
+      0%, 33%   { opacity: 0; }
+      34%, 66%  { opacity: 0.32; transform: translate(-7px, 4px); }
+      67%, 100% { opacity: 0; }
+    }
+    @keyframes flickC {
+      0%, 66%   { opacity: 0; }
+      67%, 100% { opacity: 0.32; transform: translate(5px, -3px); }
+    }
+    /* Subtle vignette: darken the center area where text sits, so noise
+       doesn't compete with reading. */
+    .hero-bg::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 55% at 32% 50%, rgba(14, 14, 16, 0.55) 0%, rgba(14, 14, 16, 0) 70%);
+      pointer-events: none;
+    }
+
+    /* ---- Display typography (italic + caps interleaved) — left-aligned -- */
+    .hero-display {
+      align-self: stretch;            /* fill the 1fr row */
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Pair 2 anchors to the bottom of the display container — auto absorbs
+       extra vertical space, so on taller screens the gap above grows. */
+    .display-pair:last-child {
+      margin-top: auto;
+    }
+    .display-pair {
+      margin-bottom: clamp(20px, 3vh, 40px);
+    }
+    .display-pair:last-child { margin-bottom: 0; }
+    /* Pair 2 — italic now matches pair 1 (100%) for full presence;
+       caps still slightly under pair 1 caps (~92%) so pair 1 stays the
+       dominant statement and the hero's overall hierarchy is intact. */
+    .display-pair-tight .display-italic { font-size: clamp(44px, min(8vw, 10vh), 120px); }
+    .display-pair-tight .display-caps   { font-size: clamp(46px, min(8.7vw, 11vh), 132px); }
+    .display-italic, .display-roman {
+      font-family: var(--serif);
+      font-size: clamp(44px, min(8vw, 10vh), 120px);
+      line-height: 0.95;
+      color: var(--hero-fg-soft);     /* dimmer than caps — sets up the louder caps below */
+      margin: 0;
+      display: block;
+      position: relative;
+      z-index: 2;
+    }
+    /* Pair 1 first line — text-like roman: low optical-size, lighter weight,
+       looser tracking. Reads like an elegant editorial subtitle blown up. */
+    .display-roman {
+      font-style: normal;
+      font-variation-settings: "opsz" 14;
+      font-weight: 400;
+      letter-spacing: -0.015em;
+    }
+    /* Pair 2 first line — full-display italic: high optical-size for dramatic
+       contrast, swashes intact, slightly opened tracking for breathing room. */
+    .display-italic {
+      font-style: italic;
+      font-variation-settings: "opsz" 144;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+    .display-caps {
+      font-family: var(--serif);
+      font-style: normal;
+      font-weight: 700;
+      font-size: clamp(50px, min(9.5vw, 12vh), 144px);
+      line-height: 0.92;
+      letter-spacing: -0.045em;
+      text-transform: uppercase;
+      color: var(--hero-fg);
+      margin: -0.16em 0 0;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ---- Mono "system status" insert between display pairs --------------- */
+    .hero-status-block {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      line-height: 1.6;
+      color: var(--hero-fg-mute);
+      margin-top: clamp(2px, 0.4vh, 8px);    /* very tight — hugs CONTESTED CLAIMS above */
+      margin-bottom: 0;                       /* auto-margin on pair 2 handles spacing below */
+      max-width: 480px;
+      padding-left: 14px;                          /* clearance for the vertical line */
+      border-left: 1px solid var(--hero-rule);    /* thin annotation line */
+      cursor: pointer;
+      transition: filter 0.3s;
+      animation: hsb-line-breathe 4.2s ease-in-out infinite;
+    }
+    /* The thin vertical line breathes between dim (normal) and brighter
+       (hover-like) shades, in sync with the case-block's living quality. */
+    @keyframes hsb-line-breathe {
+      0%, 100% { border-left-color: var(--hero-rule);    }   /* dim — alpha 0.16 */
+      50%      { border-left-color: var(--hero-fg-mute); }   /* brighter — alpha ~0.5 */
+    }
+    .hero-status-block:hover {
+      border-left-color: var(--hero-fg-mute);     /* line brightens on hover (overrides animation) */
+      filter: brightness(1.08);
+      animation-play-state: paused;
+    }
+    .hero-status-block .hsb-title  { color: var(--hero-fg-soft); }
+    .hero-status-block .hsb-active {
+      color: var(--hero-fg);   /* paper white — dormant idle ("Under investigation") */
+      transition: color 0.55s ease-out;  /* smooth brass→white fade when .is-tracing is removed */
+    }
+    .hero-status-block .hsb-active.is-tracing { color: #B8902E; }  /* brass — applied through "Tracing..." and the final "Converged..." state */
+
+    /* ---- Right vertical rail ------------------------------------------- */
+    .hero-rail {
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 64px;
+      border-left: 1px solid var(--hero-rule);
+      background: rgba(14, 14, 16, 0.65);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 4;
+      display: flex; flex-direction: column; justify-content: flex-start;
+      align-items: center;
+      padding: 28px 0 24px;
+      font-family: var(--mono);
+    }
+    .rail-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 9.5px;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--hero-fg-soft);
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .rail-label.rail-accent {
+      color: #B8902E;       /* brass — was hero-fg white */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;          /* center the cluster — barcodes hug text via gap */
+      gap: clamp(10px, 1.8vh, 18px);    /* small gap between barcode and text */
+      flex: 1;                          /* still grows to fill column space */
+      margin-top: clamp(10px, 1.8vh, 18px);     /* tight gap below "Claim Intelligence Infrastructure" */
+      margin-bottom: clamp(10px, 1.8vh, 18px);  /* tight gap above VER 0.5 */
+    }
+
+    /* Barcode — inline SVG flanking the accent label.
+       Bars are oriented HORIZONTALLY in the SVG viewBox (rect with full width,
+       varying y/height). After the rail-label's writing-mode + 180deg rotation,
+       these horizontal SVG bars render as bars PARALLEL to the rail axis on
+       screen — proper barcode orientation. Length scales with viewport height
+       so barcodes stay visually substantial while hugging the text. */
+    svg.rail-bar {
+      display: inline-block;
+      width: 8px;
+      height: clamp(60px, 11vh, 92px);
+      flex-shrink: 0;
+      opacity: 0.85;
+      vertical-align: middle;
+    }
+    .rail-meta {
+      writing-mode: horizontal-tb;
+      font-size: 9px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--hero-fg-mute);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* ---- Top row — brand line (left) + DEMO CTA (right) --------------- */
+    .hero-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+    }
+
+    /* ---- Bottom row — eyebrow / form-row / status (flex column) -------- */
+    .hero-foot {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;            /* ver mark sits on form box's vertical center */
+      justify-content: space-between;
+      gap: 32px;
+      width: 100%;
+    }
+    .form-row .field {
+      flex: 0 1 540px;                /* form box ≤540px, can shrink */
+      min-width: 0;
+    }
+
+    .hero-ver {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--hero-fg-mute);
+      text-align: right;
+      line-height: 1.5;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .hero-ver strong {
+      color: var(--hero-fg);
+      font-weight: 500;
+    }
+
+    /* ---- Invite form — dark theme variant ------------------------------ */
+    .hero .invite-eyebrow {
+      font-family: var(--mono);
+      font-size: 10px; letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--hero-accent);
+      margin-bottom: 0;                  /* hero-foot gap handles spacing */
+      display: inline-flex; align-items: center; gap: 9px;
+    }
+    .hero .invite-eyebrow::before {
+      content: ""; width: 6px; height: 6px;
+      background: var(--hero-accent); border-radius: 50%;
+      animation: eyepulse 2.4s ease-in-out infinite;
+    }
+    @keyframes eyepulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.45; transform: scale(0.78); }
+    }
+    .hero .invite-title {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 400;
+      font-size: clamp(24px, 3vw, 32px);
+      line-height: 1.2;
+      letter-spacing: -0.4px;
+      color: var(--hero-fg);
+      margin: 0 0 12px;
+    }
+    .hero .invite-desc {
+      font-family: var(--sans);
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--hero-fg-soft);
+      margin: 0 0 22px;
+      max-width: 520px;
+    }
+    .hero .field {
+      border-color: var(--hero-rule);
+      background: rgba(242, 239, 229, 0.04);
+    }
+    .hero .field:focus-within { border-color: var(--hero-fg); }
+    .hero .field input {
+      color: var(--hero-fg);
+    }
+    .hero .field input::placeholder {
+      color: var(--hero-fg-mute);
+    }
+    .hero .field button {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent;
+      color: var(--hero-fg-soft);
+      border-left-color: var(--hero-rule);
+      transition: color 0.34s ease;
+    }
+    .hero .field button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(242, 239, 229, 0.12);
+      transform: translateX(-101%);
+      transition: transform 0.42s cubic-bezier(0.65, 0, 0.25, 1);
+      z-index: 0;
+    }
+    .hero .field button:hover::before {
+      transform: translateX(0);
+    }
+    .hero .field button > * {
+      position: relative;
+      z-index: 1;
+    }
+    .hero .field button:hover {
+      color: var(--hero-fg);
+      background: transparent;        /* explicitly defeat base .field button:hover red */
+    }
+    .hero .status.good { color: #88C99A; }
+    .hero .status.bad  { color: var(--hero-accent); }
+    .hero .status.info { color: var(--hero-fg-soft); }
+
+    /* ---------------------------------------------------- */
+    /* LIFECYCLE SECTION — own section below the hero        */
+    /* ---------------------------------------------------- */
+    .lifecycle-section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(32px, 5vh, 64px) clamp(20px, 5vw, 56px);
+      position: relative;
+      z-index: 5;
+      background: var(--paper);
+      scroll-snap-align: start;
+    }
+    .lc-stage {
+      max-width: 1500px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Reserved zone below the cards. Sized to match the actual desc panel
+       max content (≈260px), so when the desc is closed there's only a small
+       balanced gap rather than a visible "empty box" before the footer. */
+    .lc-desc-zone {
+      min-height: 260px;
+      position: relative;
+    }
+
+    .section-eyebrow {
+      font-family: var(--mono);
+      font-size: 10.5px; letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 400;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.18;
+      letter-spacing: -0.5px;
+      color: var(--ink);
+      max-width: 760px;
+      margin: 0 0 16px;
+    }
+    .section-body {
+      font-family: var(--sans);
+      font-size: 14.5px; line-height: 1.62;
+      color: var(--ink-soft);
+      max-width: 720px;
+      margin: 0 0 44px;
+    }
+
+    /* ---- 3-card lifecycle ---- */
+    .lc-cards {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr 40px 1fr;
+      gap: 0;
+      align-items: stretch;
+      margin: 0;
+    }
+
+    /* Card is now a <button> for keyboard + focus support */
+    .lc-card {
+      position: relative;
+      isolation: isolate;             /* stacking context for noise overlay */
+      border: 1px solid var(--rule);
+      background: var(--paper);
+      padding: 22px 18px 18px;
+      display: flex; flex-direction: column;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    /* Animated cream noise — same dynamic technique as hero TV-static, but
+       multiply-blended on paper bg so dark particles read as grain texture. */
+    .lc-card-noise {
+      position: absolute; inset: 0;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .lc-card-noise .noise {
+      position: absolute; inset: -10%;
+      background-size: 220px 220px;
+      background-repeat: repeat;
+      opacity: 0;
+      mix-blend-mode: multiply;
+      will-change: opacity, transform;
+    }
+    .lc-card-noise .n1 {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.55 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      animation: lcFlickA 0.36s steps(1) infinite;
+    }
+    .lc-card-noise .n2 {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' seed='17' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.55 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      animation: lcFlickB 0.36s steps(1) infinite;
+    }
+    .lc-card-noise .n3 {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='2' seed='29' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.55 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      animation: lcFlickC 0.36s steps(1) infinite;
+    }
+    /* Reduced flicker peaks vs hero (0.18 vs 0.32) — cards stay readable */
+    @keyframes lcFlickA {
+      0%, 33%   { opacity: 0.18; transform: translate(0, 0); }
+      34%, 100% { opacity: 0; }
+    }
+    @keyframes lcFlickB {
+      0%, 33%   { opacity: 0; }
+      34%, 66%  { opacity: 0.18; transform: translate(-7px, 4px); }
+      67%, 100% { opacity: 0; }
+    }
+    @keyframes lcFlickC {
+      0%, 66%   { opacity: 0; }
+      67%, 100% { opacity: 0.18; transform: translate(5px, -3px); }
+    }
+    /* Lift card content above the noise layer */
+    .lc-card > *:not(.lc-card-noise) {
+      position: relative;
+      z-index: 1;
+    }
+    .lc-card:hover {
+      border-color: var(--ink);
+      transform: translateY(-2px);
+    }
+    .lc-card:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+    .lc-card.active {
+      border-color: var(--ink);
+      transform: translateY(-2px);
+    }
+
+    .lc-card-tag {
+      position: absolute;
+      top: 12px; left: 18px;
+      font-family: var(--mono);
+      font-size: 8.5px;
+      letter-spacing: 0.9px; text-transform: uppercase;
+      color: var(--ink-mute);
+      opacity: 0.75;
+    }
+    .lc-card-svg {
+      width: 100%;
+      height: 96px;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 6px;
+      margin-bottom: 16px;
+    }
+    .lc-card-svg svg { width: 100%; height: 100%; display: block; }
+    .lc-card-rule {
+      height: 1px;
+      background: var(--rule-soft);
+      margin: 0 0 14px;
+    }
+    .lc-card-meta {
+      display: flex; align-items: baseline; gap: 10px;
+    }
+    .lc-card-num {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 400;
+      font-size: 22px;
+      color: var(--primary);
+      letter-spacing: -0.4px;
+      line-height: 1;
+    }
+    .lc-card-label {
+      font-family: var(--mono);
+      font-size: 9.5px; letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .lc-card-toggle {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1;
+      color: var(--ink-mute);
+      transition: color 0.15s;
+    }
+    .lc-card-toggle::before { content: "+"; }
+    .lc-card.active .lc-card-toggle { color: var(--primary); }
+    .lc-card.active .lc-card-toggle::before { content: "−"; }
+
+    .lc-arrow {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 18px; line-height: 1;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    /* ---- Expandable description panel ---- */
+    .lc-descs {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      border: 1px solid transparent;
+      background: var(--paper-deep);
+      margin-top: 0;
+      transition: max-height 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.3s ease,
+                  margin-top 0.3s ease,
+                  border-color 0.3s ease;
+    }
+    .lc-descs.active {
+      max-height: 260px;
+      opacity: 1;
+      margin-top: 16px;
+      border-color: var(--rule);
+    }
+    .lc-desc-inner {
+      padding: 28px clamp(24px, 3vw, 36px) 32px;
+    }
+    .lc-desc-eyebrow {
+      font-family: var(--mono);
+      font-size: 10.5px; letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .lc-desc-title {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 400;
+      font-size: clamp(20px, 2.4vw, 24px);
+      line-height: 1.25;
+      letter-spacing: -0.4px;
+      color: var(--ink);
+      margin: 0 0 14px;
+      max-width: 640px;
+    }
+    .lc-desc-body {
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+      margin: 0;
+      max-width: 680px;
+    }
+
+    /* ---- Cases note ---- */
+    .lc-aside {
+      max-width: 720px;
+      padding-top: 22px;
+      border-top: 1px dashed var(--rule);
+      margin-top: 36px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--ink-mute);
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+    .lc-aside .mark {
+      font-family: var(--mono);
+      font-style: normal;
+      font-size: 9.5px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    /* ---- Invite request — inline in hero ---- */
+    .invite {
+      max-width: 620px;
+    }
+    .invite-eyebrow {
+      font-family: var(--mono);
+      font-size: 10px; letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .invite-title {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 400;
+      font-size: clamp(22px, 2.6vw, 28px);
+      line-height: 1.25;
+      letter-spacing: -0.4px;
+      color: var(--ink);
+      margin: 0 0 10px;
+    }
+    .invite-desc {
+      font-family: var(--sans);
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+      margin: 0 0 22px;
+    }
+
+    .field {
+      display: flex; gap: 0;
+      border: 1px solid var(--rule);
+      background: var(--paper);
+      border-radius: 2px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .field:focus-within { border-color: var(--ink); }
+    .field input {
+      flex: 1; min-width: 0;
+      border: 0; outline: 0;
+      background: transparent;
+      padding: 14px 16px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink);
+      letter-spacing: 0.2px;
+    }
+    .field input::placeholder {
+      color: var(--ink-mute);
+      font-family: var(--mono);
+      letter-spacing: 0.4px;
+    }
+    .field input.code {
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-weight: 500;
+    }
+    .field button {
+      border: 0;
+      border-left: 1px solid var(--rule);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 0 22px;
+      font-family: var(--mono);
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 1.3px; text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .field button:hover { background: var(--primary); }
+    .field button:disabled {
+      background: var(--muted);
+      cursor: wait;
+    }
+
+    .status {
+      font-family: var(--mono);
+      font-size: 10.5px; letter-spacing: 0.4px;
+      margin-top: 0;
+      min-height: 0;
+      line-height: 1.45;
+      opacity: 0;
+      transition: opacity 0.2s, margin-top 0.2s, min-height 0.2s;
+    }
+    .status.show { opacity: 1; margin-top: 14px; min-height: 16px; }
+    .status.good { color: var(--good); }
+    .status.bad { color: var(--primary); }
+    .status.info { color: var(--ink-soft); }
+
+    /* ---------------------------------------------------- */
+    /* MODAL — code redemption                               */
+    /* ---------------------------------------------------- */
+    .modal {
+      position: fixed; inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center; justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0s linear 0.2s;
+    }
+    .modal.open {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.2s, visibility 0s;
+    }
+    .modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(26, 26, 26, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .modal-panel {
+      position: relative;
+      background: rgba(20, 20, 26, 0.88);              /* dark archive panel — slightly translucent so backdrop blur reads through */
+      border: 1px solid rgba(184, 144, 46, 0.45);     /* brass border */
+      color: #F2EFE5;                                  /* paper text on dark */
+      padding: clamp(40px, 5vw, 56px) clamp(28px, 4vw, 40px) clamp(28px, 3.5vw, 36px);
+      max-width: 440px;
+      width: 100%;
+      transform: translateY(12px);
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      isolation: isolate;
+      overflow: hidden;
+    }
+    /* Modal noise texture — same fractalNoise pattern as hero TV-static
+       but a single static seed (no flicker — modal is a stable surface).
+       Soft opacity so it reads as paper grain rather than dominant texture. */
+    .modal-panel::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.93  0 0 0 0 0.86  0 0 0 0.85 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      opacity: 0.10;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .modal.open .modal-panel {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .modal-close {
+      position: absolute; top: 14px; right: 16px;
+      background: none; border: 0;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(242, 239, 229, 0.4);                /* dim paper on dark */
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 18px; line-height: 1;
+      transition: color 0.15s;
+      border-radius: 2px;
+    }
+    .modal-close:hover { color: #B8902E; background: transparent; }
+    .modal-tag {
+      font-family: var(--mono);
+      font-size: 11px; letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #B8902E;                                  /* brass — matches rail accent */
+      margin-bottom: clamp(22px, 3vh, 32px);
+    }
+
+    /* ── Dark-theme overrides for the .field inside modal-panel ─────────── */
+    .modal-panel .field {
+      background: transparent;
+      border-color: rgba(242, 239, 229, 0.2);
+    }
+    .modal-panel .field:focus-within { border-color: rgba(184, 144, 46, 0.7); }
+    .modal-panel .field input {
+      color: #F2EFE5;
+      caret-color: #B8902E;
+    }
+    .modal-panel .field input::placeholder {
+      color: rgba(242, 239, 229, 0.35);
+      text-transform: none;
+      letter-spacing: 0.4px;
+    }
+    .modal-panel .field button {
+      background: transparent;
+      border-left: 1px solid rgba(242, 239, 229, 0.2);
+      color: #F2EFE5;
+    }
+    .modal-panel .field button:hover {
+      background: rgba(184, 144, 46, 0.12);
+      color: #F2EFE5;
+    }
+    .modal-panel .status {
+      color: rgba(242, 239, 229, 0.65);
+      font-family: var(--mono);
+      font-size: 11px;
+      margin-top: 14px;
+      min-height: 16px;
+      letter-spacing: 0.3px;
+    }
+    .modal-panel .status.bad  { color: #DD8A7C; }     /* lighter rust for dark theme */
+    .modal-panel .status.good { color: #88C99A; }     /* mint */
+    .modal-panel .status.info { color: rgba(242, 239, 229, 0.55); }
+
+    /* ---------------------------------------------------- */
+    /* FOOTER                                                */
+    /* ---------------------------------------------------- */
+    footer {
+      padding: 22px clamp(20px, 5vw, 56px);
+      border-top: 1px solid var(--rule);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--ink-mute);
+      display: flex; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      position: relative;
+      z-index: 5;
+      background: var(--paper);
+    }
+    footer .seal {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: none;
+      letter-spacing: -0.2px;
+      color: var(--ink);
+    }
+    footer a {
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    footer a:hover { color: var(--primary); border-color: var(--primary); }
+
+    /* ---------------------------------------------------- */
+    /* Subtle paper grain over everything                    */
+    /* ---------------------------------------------------- */
+    body::after {
+      content: "";
+      position: fixed; inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      mix-blend-mode: multiply;
+      z-index: 50;
+      background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+    }
+
+    /* ---------------------------------------------------- */
+    /* Page-load reveal                                      */
+    /* ---------------------------------------------------- */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { animation: rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .reveal.d1 { animation-delay: 0.05s; }
+    .reveal.d2 { animation-delay: 0.20s; }
+    .reveal.d3 { animation-delay: 0.36s; }
+    .reveal.d4 { animation-delay: 0.54s; }
+    .reveal.d5 { animation-delay: 0.74s; }
+    .reveal.d6 { animation-delay: 0.94s; }
+
+    /* ---------------------------------------------------- */
+    /* Mobile                                                */
+    /* ---------------------------------------------------- */
+    @media (max-width: 880px) {
+      .hero-rail { display: none; }
+      .hero-stage {
+        padding-left: clamp(20px, 5vw, 56px);
+        padding-right: clamp(20px, 5vw, 56px);
+      }
+      .form-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .form-row .field { flex: 0 1 auto; width: 100%; }
+      .hero-ver { text-align: left; }
+    }
+    @media (max-width: 760px) {
+      .lc-cards {
+        grid-template-columns: 1fr;
+      }
+      .lc-arrow {
+        height: 36px;
+        font-size: 18px;
+        transform: rotate(90deg);
+      }
+      /* Mobile: cards stack vertically, no need for huge reserved zone.
+         Descs naturally sit below the last card without fighting layout. */
+      .lc-desc-zone {
+        min-height: auto;
+      }
+      .lc-descs.active {
+        margin-top: 24px;
+      }
+      .hero-demo-cta { padding: 10px 14px; font-size: 10px; }
+      .display-italic, .display-roman { font-size: clamp(36px, 10vw, 56px); }
+      .display-caps   { font-size: clamp(40px, 11.5vw, 64px); margin-top: -0.14em; }
+      .hero-brand { gap: 10px; }
+      .hero-brand-wm { font-size: 18px; }
+      .hero-brand-meta { font-size: 9px; letter-spacing: 0.8px; }
+    }
+    @media (max-width: 480px) {
+      .field input { padding: 12px 14px; font-size: 12.5px; }
+      .field button { padding: 0 16px; font-size: 10px; }
+    }
+
+    /* Very short screens — drop the mono status block to guarantee form fit */
+    @media (max-height: 640px) {
+      .hero-status-block { display: none; }
+    }
+
+    /* Reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-bg .noise,
+      .lc-card-noise .noise,
+      .hero .invite-eyebrow::before,
+      .hero-demo-cta .pulse {
+        animation: none;
+      }
+      .hero .btn-arr-track,
+      .hero-demo-cta::before,
+      .hero .field button::before { transition: none; }
+      .hero-bg .n1 { opacity: 0.18; }
+      .hero-bg .n2, .hero-bg .n3 { opacity: 0; }
+      .lc-card-noise .n1 { opacity: 0.10; }
+      .lc-card-noise .n2, .lc-card-noise .n3 { opacity: 0; }
+      .reveal { animation-duration: 0.3s; }
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+
+    <!-- ===================== HERO ===================== -->
+    <section class="hero">
+
+      <!-- Animated TV-static noise backdrop -->
+      <div class="hero-bg" aria-hidden="true">
+        <div class="noise n1"></div>
+        <div class="noise n2"></div>
+        <div class="noise n3"></div>
+      </div>
+
+      <!-- Right vertical rail — rotated mono labels -->
+      <aside class="hero-rail" aria-hidden="true">
+        <span class="rail-label">Claim Intelligence Infrastructure</span>
+        <span class="rail-label rail-accent">
+          <svg class="rail-bar" viewBox="0 0 8 60" preserveAspectRatio="none" aria-hidden="true">
+            <g fill="currentColor">
+              <rect y="0.0"  height="0.8" width="8"/>
+              <rect y="3.0"  height="0.4" width="8"/>
+              <rect y="5.6"  height="1.2" width="8"/>
+              <rect y="9.6"  height="0.6" width="8"/>
+              <rect y="13.0" height="1.0" width="8"/>
+              <rect y="17.4" height="0.4" width="8"/>
+              <rect y="20.0" height="1.4" width="8"/>
+              <rect y="25.0" height="0.6" width="8"/>
+              <rect y="28.0" height="0.8" width="8"/>
+              <rect y="32.0" height="1.0" width="8"/>
+              <rect y="36.4" height="0.4" width="8"/>
+              <rect y="39.0" height="1.2" width="8"/>
+              <rect y="43.4" height="0.6" width="8"/>
+              <rect y="47.0" height="0.8" width="8"/>
+              <rect y="51.0" height="1.0" width="8"/>
+              <rect y="55.4" height="0.4" width="8"/>
+              <rect y="58.0" height="1.2" width="8"/>
+            </g>
+          </svg>
+          Converging Reality · Asymptotic Truth
+          <svg class="rail-bar" viewBox="0 0 8 60" preserveAspectRatio="none" aria-hidden="true">
+            <g fill="currentColor">
+              <rect y="0.4"  height="1.0" width="8"/>
+              <rect y="3.6"  height="0.6" width="8"/>
+              <rect y="6.4"  height="0.4" width="8"/>
+              <rect y="9.0"  height="1.4" width="8"/>
+              <rect y="13.6" height="0.6" width="8"/>
+              <rect y="16.4" height="1.0" width="8"/>
+              <rect y="20.0" height="0.4" width="8"/>
+              <rect y="23.0" height="0.8" width="8"/>
+              <rect y="27.0" height="1.2" width="8"/>
+              <rect y="31.4" height="0.6" width="8"/>
+              <rect y="34.6" height="0.8" width="8"/>
+              <rect y="38.4" height="0.4" width="8"/>
+              <rect y="41.4" height="1.4" width="8"/>
+              <rect y="46.0" height="0.6" width="8"/>
+              <rect y="49.0" height="0.8" width="8"/>
+              <rect y="53.0" height="1.0" width="8"/>
+              <rect y="57.0" height="0.4" width="8"/>
+              <rect y="59.0" height="0.8" width="8"/>
+            </g>
+          </svg>
+        </span>
+        <span class="rail-meta">VER<br>0.5</span>
+      </aside>
+
+      <div class="hero-stage">
+
+        <!-- Top row: brand line (left) + DEMO CTA (right) -->
+        <header class="hero-top reveal d1">
+          <div class="hero-brand">
+            <span class="hero-brand-wm">Trace</span>
+            <span class="hero-brand-divider"></span>
+            <span class="hero-brand-meta">
+              Claim Intelligence
+              <span class="sep">·</span>
+              <span class="accent">v0.5</span>
+              <span class="sep">·</span>
+              in development
+            </span>
+          </div>
+          <button type="button" class="hero-demo-cta" id="openModal" aria-haspopup="dialog" aria-controls="codeModal">
+            <span class="pulse" aria-hidden="true"></span>
+            <span>Demo</span>
+          </button>
+        </header>
+
+        <!-- Center display typography — italic-serif paired with bold-caps -->
+        <div class="hero-display">
+          <div class="display-pair reveal d3">
+            <span class="display-roman">An instrument for</span>
+            <span class="display-caps">Contested Claims</span>
+          </div>
+
+          <div class="hero-status-block reveal d4">
+            <span class="hsb-title">[Nordstream Attribution]</span><br>
+            Ref: Casefile 001<br>
+            Status: <span class="hsb-active">Under investigation</span>
+          </div>
+
+          <div class="display-pair display-pair-tight reveal d5">
+            <span class="display-italic">Not a verdict.</span>
+            <span class="display-caps">Exhibit,<br>don't verify.</span>
+          </div>
+        </div>
+
+        <!-- Bottom row: eyebrow → (form box + ver mark on form's center axis) → status -->
+        <div class="hero-foot">
+          <div class="invite-eyebrow reveal d6" id="invite">V0.4 · By Invite Only</div>
+          <div class="form-row reveal d6">
+            <form class="field" id="requestForm" novalidate>
+              <input
+                type="email"
+                name="email"
+                id="emailInput"
+                placeholder="your.email@somewhere.org"
+                autocomplete="email"
+                required
+              />
+              <button type="submit">
+                <span>Request Code</span>
+                <span class="btn-arr" aria-hidden="true">
+                  <span class="btn-arr-track">
+                    <span>→</span>
+                    <span>→</span>
+                  </span>
+                </span>
+              </button>
+            </form>
+            <div class="hero-ver" aria-hidden="true">Built in Amsterdam · MMXXVI</div>
+          </div>
+          <div class="status info" id="requestStatus"></div>
+        </div>
+
+      </div>
+    </section>
+
+
+  </main>
+
+
+  <!-- ===================== MODAL ===================== -->
+  <div class="modal" id="codeModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="modal-tag" id="modalTitle">[ Demo · Access ]</div>
+      <form class="field" id="redeemForm" novalidate>
+        <input
+          type="text"
+          name="code"
+          id="codeInput"
+          class="code"
+          placeholder="enter access code"
+          autocomplete="off"
+          spellcheck="false"
+          required
+        />
+        <button type="submit" id="redeemBtn">Open →</button>
+      </form>
+      <div class="status info" id="redeemStatus"></div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================================================
+    // CONFIG
+    // ------------------------------------------------------------------------
+    // INVITE_CODE_HASHES: SHA-256 hashes of valid codes (lowercased, trimmed).
+    //   Generate from terminal:  echo -n "trace-xyz-2026" | shasum -a 256
+    //   Or in this page's DevTools console:  sha256("trace-xyz-2026").then(console.log)
+    // DEMO_URL: where users land after a valid code. Leave null until live.
+    // INVITE_INBOX: forwarded address for invite requests.
+    // ========================================================================
+    const CONFIG = {
+      INVITE_CODE_HASHES: [
+        // Placeholder — REPLACE before going live. SHA-256 of "trace-demo-2026".
+        "9a7e0c6bb0a1d3e9f9e4f7c4d3a8b5e6f1c2d4e8a0b7c9d2e3f5a6b8c1d4e7f0",
+      ],
+      DEMO_URL: null,
+      INVITE_INBOX: "Info@traceintelligence.io",
+    };
+
+    async function sha256(text) {
+      const buf = new TextEncoder().encode(text);
+      const hash = await crypto.subtle.digest("SHA-256", buf);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+    window.sha256 = sha256;
+
+    function setStatus(el, text, tone) {
+      el.textContent = text;
+      el.classList.remove("good", "bad", "info");
+      if (tone) el.classList.add(tone);
+      el.classList.add("show");
+    }
+
+    // ---- Modal open / close --------------------------------------------------
+    (function () {
+      const modal = document.getElementById("codeModal");
+      const openBtn = document.getElementById("openModal");
+      const codeInput = document.getElementById("codeInput");
+
+      function openModal() {
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("modal-open");
+        setTimeout(() => codeInput && codeInput.focus(), 200);
+      }
+      function closeModal() {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+      }
+
+      openBtn.addEventListener("click", openModal);
+      modal.addEventListener("click", function (ev) {
+        if (ev.target.closest("[data-close]")) closeModal();
+      });
+      document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && modal.classList.contains("open")) closeModal();
+      });
+
+      // Expose for the "request an invite ↓" link inside the modal that also closes it
+      window._closeModal = closeModal;
+    })();
+
+    // ---- Invite request — opens user's mail client --------------------------
+    (function () {
+      const form = document.getElementById("requestForm");
+      const input = document.getElementById("emailInput");
+      const status = document.getElementById("requestStatus");
+      if (!form) return;
+
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        const email = (input.value || "").trim();
+        const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!ok) {
+          setStatus(status, "That doesn\u2019t look like a valid email — try again.", "bad");
+          return;
+        }
+        const subject = encodeURIComponent("Trace · invite request");
+        const body = encodeURIComponent(
+          "I\u2019d like to be considered for a Trace demo invite.\n\n" +
+          "Email: " + email + "\n\n" +
+          "What brought me here / what I\u2019d use Trace for (optional):\n"
+        );
+        window.location.href = "mailto:" + CONFIG.INVITE_INBOX + "?subject=" + subject + "&body=" + body;
+        setStatus(
+          status,
+          "Opening your mail client\u2026 if nothing happens, write to " + CONFIG.INVITE_INBOX + " directly.",
+          "good"
+        );
+      });
+    })();
+
+    // ---- Code redemption — client-side hash check ---------------------------
+    (function () {
+      const form = document.getElementById("redeemForm");
+      const input = document.getElementById("codeInput");
+      const btn = document.getElementById("redeemBtn");
+      const status = document.getElementById("redeemStatus");
+      if (!form) return;
+
+      form.addEventListener("submit", async function (ev) {
+        ev.preventDefault();
+        const raw = (input.value || "").trim().toLowerCase();
+        if (!raw) {
+          setStatus(status, "Enter a code.", "bad");
+          return;
+        }
+        btn.disabled = true;
+        setStatus(status, "Checking\u2026", "info");
+
+        let hash;
+        try {
+          hash = await sha256(raw);
+        } catch (e) {
+          setStatus(status, "Couldn\u2019t verify in this browser. Try a current Chrome / Safari / Firefox.", "bad");
+          btn.disabled = false;
+          return;
+        }
+
+        const valid = CONFIG.INVITE_CODE_HASHES.includes(hash);
+        if (!valid) {
+          setStatus(status, "Code not recognized.", "bad");
+          btn.disabled = false;
+          return;
+        }
+
+        if (CONFIG.DEMO_URL) {
+          setStatus(status, "Accepted. Opening\u2026", "good");
+          setTimeout(function () { window.location.href = CONFIG.DEMO_URL; }, 700);
+        } else {
+          setStatus(
+            status,
+            "Accepted. Demo link will follow by email shortly.",
+            "good"
+          );
+          btn.disabled = false;
+        }
+      });
+    })();
+
+
+    /* ─────────────────────────────────────────────────────────────────────
+       STATUS DECODE ANIMATION
+       Hover on the case-block → scramble → "tracing..." → scramble → final.
+       Default text: "Under investigation" (also rendered statically as fallback)
+       Final text:   "Converged, Institutionally open"
+       ───────────────────────────────────────────────────────────────────── */
+    (function () {
+      const block = document.querySelector(".hero-status-block");
+      if (!block) return;
+      const statusEl = block.querySelector(".hsb-active");
+      if (!statusEl) return;
+
+      const STATES = {
+        idle:         "Under investigation",
+        intermediate: "Tracing...",
+        final:        "Converged, Institutionally open"
+      };
+
+      // Ensure the static HTML fallback matches our idle state
+      statusEl.textContent = STATES.idle;
+
+      const SCRAMBLE_CHARS = "!@#$%&*<>?/~+=_-{}[]()|\\";
+      const randChar = () => SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+      const scramble = (n) => Array.from({ length: n }, randChar).join("");
+
+      let runToken = 0;
+      let activeIntervals = [];
+      const stopIntervals = () => { activeIntervals.forEach(clearInterval); activeIntervals = []; };
+      const setTracing = (on) => statusEl.classList.toggle("is-tracing", on);
+
+      // Returns a promise that resolves after `durationMs`, while continuously
+      // scrambling the element with random chars at ~18fps.
+      function scramblePhase(charLength, durationMs) {
+        return new Promise((resolve) => {
+          const myToken = runToken;
+          const start = Date.now();
+          statusEl.textContent = scramble(charLength);
+          const intv = setInterval(() => {
+            if (myToken !== runToken) { clearInterval(intv); return; }
+            if (Date.now() - start >= durationMs) {
+              clearInterval(intv);
+              resolve();
+              return;
+            }
+            statusEl.textContent = scramble(charLength);
+          }, 55);
+          activeIntervals.push(intv);
+        });
+      }
+
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      async function startDecode() {
+        const myToken = ++runToken;
+        stopIntervals();
+        setTracing(false);
+
+        // Phase 1: scramble the idle text length (~320ms of chaos, still white)
+        await scramblePhase(STATES.idle.length, 320);
+        if (myToken !== runToken) return;
+
+        // Phase 2: settle on "Tracing..." — brass color, longer dwell so the
+        // intermediate state has presence rather than blinking by.
+        statusEl.textContent = STATES.intermediate;
+        setTracing(true);
+        await wait(1800);
+        if (myToken !== runToken) return;
+
+        // Phase 3: scramble at the final-text length (still brass — keeps the
+        // visual continuity of "the system is showing you something").
+        await scramblePhase(STATES.final.length, 320);
+        if (myToken !== runToken) return;
+
+        // Phase 4: lock in the final state — brass too.
+        // Brass now reads as "active result" rather than "in progress";
+        // only the dormant "Under investigation" idle stays white.
+        statusEl.textContent = STATES.final;
+      }
+
+      function resetDecode() {
+        runToken++;            // invalidates any in-flight phase
+        stopIntervals();
+        setTracing(false);
+        statusEl.textContent = STATES.idle;
+      }
+
+      // Smooth reverse: scramble while still brass, then trigger color fade
+      // by dropping .is-tracing during the second scramble. The CSS color
+      // transition (0.55s) blends through the scramble chaos so the brass→white
+      // shift never reads as a hard cut.
+      async function reverseDecode() {
+        const myToken = ++runToken;
+        stopIntervals();
+
+        // Phase R1: scramble at final-text length, still brass
+        await scramblePhase(STATES.final.length, 360);
+        if (myToken !== runToken) return;
+
+        // Phase R2: drop the brass class — CSS color transition begins fading
+        // toward white. Continue scrambling at idle-text length while the
+        // color blend happens; the chaos hides the visual seam.
+        setTracing(false);
+        await scramblePhase(STATES.idle.length, 420);
+        if (myToken !== runToken) return;
+
+        // Phase R3: settle at idle (already fully white by now)
+        statusEl.textContent = STATES.idle;
+      }
+
+      // Auto-loop: cycles idle → decode → hold → idle continuously.
+      // Respects prefers-reduced-motion (holds at static "Under investigation"
+      // and skips the animation entirely).
+      const prefersReducedMotion = window.matchMedia
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      async function autoLoop() {
+        if (prefersReducedMotion) return;     // honor accessibility preference
+        // Slight initial pause so the page settles before the first cycle.
+        await wait(900);
+        while (true) {
+          await startDecode();     // scramble → Tracing... → scramble → Converged
+          await wait(3000);        // hold at "Converged, Institutionally open" (brass)
+          await reverseDecode();   // smooth de-tracing: scramble + brass→white fade → idle
+          await wait(2500);        // dwell at idle before next cycle
+        }
+      }
+      autoLoop();
+    })();
+  </script>
+</body>
+</html>
