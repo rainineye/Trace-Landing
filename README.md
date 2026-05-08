@@ -18,8 +18,8 @@ Cloudflare Pages also provides a generated preview domain for deployments.
 
 ```text
 .
-├── index.html
-└── README.md
+|-- index.html
+`-- README.md
 ```
 
 ## Deployment
