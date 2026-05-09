@@ -1,0 +1,20 @@
+# Files in this repo that should NOT be served as public static assets.
+# Cloudflare Workers Static Assets respects this file.
+
+src/
+.wrangler/
+.git/
+node_modules/
+.gitignore
+.assetsignore
+wrangler.jsonc
+schema.sql
+README.md
+DEPLOY.md
+package.json
+package-lock.json
+.dev.vars
+.dev.vars.example
+.env
+.env.example
+vercel-demo-snippet.js

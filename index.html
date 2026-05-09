@@ -375,8 +375,8 @@
     .rail-label {
       writing-mode: vertical-rl;
       transform: rotate(180deg);
-      font-size: clamp(7px, 0.92vh, 9.5px);
-      letter-spacing: clamp(1.2px, 0.18vh, 1.6px);
+      font-size: clamp(7px, 0.92vh, 14px);
+      letter-spacing: clamp(1.2px, 0.18vh, 2.4px);
       text-transform: uppercase;
       color: var(--hero-fg-soft);
       white-space: nowrap;
@@ -387,10 +387,10 @@
       display: inline-flex;
       align-items: center;
       justify-content: flex-start;       /* cluster anchors to top of rail-accent's space — sits in upper-middle of rail */
-      gap: clamp(5px, 1vh, 12px);        /* small gap between barcode and text — scales with vh */
+      gap: clamp(5px, 1vh, 14px);        /* small gap between barcode and text — scales with vh */
       flex: 1;                            /* fill remaining column so VER 0.5 ends up at bottom */
-      margin-top: clamp(10px, 2vh, 28px); /* gap below "Claim Intelligence Infrastructure" */
-      margin-bottom: clamp(10px, 2vh, 28px);  /* gap above VER 0.5 */
+      margin-top: clamp(10px, 2vh, 36px); /* gap below "Claim Intelligence Infrastructure" */
+      margin-bottom: clamp(10px, 2vh, 36px);  /* gap above VER 0.5 */
     }
 
     /* Barcode — inline SVG flanking the accent label.
@@ -402,7 +402,7 @@
     svg.rail-bar {
       display: inline-block;
       width: 8px;
-      height: clamp(18px, 3.4vh, 40px);
+      height: clamp(18px, 3.4vh, 56px);
       flex-shrink: 0;
       opacity: 0.85;
       vertical-align: middle;
@@ -1285,27 +1285,15 @@
     // ========================================================================
     // CONFIG
     // ------------------------------------------------------------------------
-    // INVITE_CODE_HASHES: SHA-256 hashes of valid codes (lowercased, trimmed).
-    //   Generate from terminal:  echo -n "trace-xyz-2026" | shasum -a 256
-    //   Or in this page's DevTools console:  sha256("trace-xyz-2026").then(console.log)
-    // DEMO_URL: where users land after a valid code. Leave null until live.
-    // INVITE_INBOX: forwarded address for invite requests.
+    // All access logic runs on the server (Cloudflare Worker, see /src/index.js):
+    //   POST /api/request-code  { email }     -> issues + emails an access code
+    //   POST /api/redeem-code   { code  }     -> returns { redirect } to demo
+    //   GET  /api/check-session?s=...         -> validated by demo on load
+    // INVITE_INBOX is kept only as a fallback contact line in error messages.
     // ========================================================================
     const CONFIG = {
-      INVITE_CODE_HASHES: [
-        // Placeholder — REPLACE before going live. SHA-256 of "trace-demo-2026".
-        "9a7e0c6bb0a1d3e9f9e4f7c4d3a8b5e6f1c2d4e8a0b7c9d2e3f5a6b8c1d4e7f0",
-      ],
-      DEMO_URL: null,
       INVITE_INBOX: "Info@traceintelligence.io",
     };
-
-    async function sha256(text) {
-      const buf = new TextEncoder().encode(text);
-      const hash = await crypto.subtle.digest("SHA-256", buf);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
-    }
-    window.sha256 = sha256;
 
     function setStatus(el, text, tone) {
       el.textContent = text;
@@ -1344,14 +1332,15 @@
       window._closeModal = closeModal;
     })();
 
-    // ---- Invite request — opens user's mail client --------------------------
+    // ---- Invite request — POSTs to /api/request-code ------------------------
     (function () {
       const form = document.getElementById("requestForm");
       const input = document.getElementById("emailInput");
       const status = document.getElementById("requestStatus");
+      const btn = form && form.querySelector("button[type=submit]");
       if (!form) return;
 
-      form.addEventListener("submit", function (ev) {
+      form.addEventListener("submit", async function (ev) {
         ev.preventDefault();
         const email = (input.value || "").trim();
         const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -1359,22 +1348,48 @@
           setStatus(status, "That doesn\u2019t look like a valid email — try again.", "bad");
           return;
         }
-        const subject = encodeURIComponent("Trace · invite request");
-        const body = encodeURIComponent(
-          "I\u2019d like to be considered for a Trace demo invite.\n\n" +
-          "Email: " + email + "\n\n" +
-          "What brought me here / what I\u2019d use Trace for (optional):\n"
-        );
-        window.location.href = "mailto:" + CONFIG.INVITE_INBOX + "?subject=" + subject + "&body=" + body;
-        setStatus(
-          status,
-          "Opening your mail client\u2026 if nothing happens, write to " + CONFIG.INVITE_INBOX + " directly.",
-          "good"
-        );
+
+        if (btn) btn.disabled = true;
+        setStatus(status, "Sending\u2026", "info");
+
+        try {
+          const res = await fetch("/api/request-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email }),
+          });
+          const data = await res.json().catch(function () { return {}; });
+
+          if (res.ok && data.ok) {
+            setStatus(
+              status,
+              "Code sent. Check your inbox (and spam). If it doesn\u2019t arrive, write to " +
+                CONFIG.INVITE_INBOX + ".",
+              "good"
+            );
+            input.value = "";
+          } else if (data && data.error === "invalid_email") {
+            setStatus(status, "That doesn\u2019t look like a valid email — try again.", "bad");
+          } else {
+            setStatus(
+              status,
+              "Couldn\u2019t reach the server. Try again, or email " + CONFIG.INVITE_INBOX + ".",
+              "bad"
+            );
+          }
+        } catch (e) {
+          setStatus(
+            status,
+            "Network error. Try again, or email " + CONFIG.INVITE_INBOX + ".",
+            "bad"
+          );
+        } finally {
+          if (btn) btn.disabled = false;
+        }
       });
     })();
 
-    // ---- Code redemption — client-side hash check ---------------------------
+    // ---- Code redemption — POSTs to /api/redeem-code ------------------------
     (function () {
       const form = document.getElementById("redeemForm");
       const input = document.getElementById("codeInput");
@@ -1392,31 +1407,26 @@
         btn.disabled = true;
         setStatus(status, "Checking\u2026", "info");
 
-        let hash;
         try {
-          hash = await sha256(raw);
+          const res = await fetch("/api/redeem-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: raw }),
+          });
+          const data = await res.json().catch(function () { return {}; });
+
+          if (res.ok && data.ok && data.redirect) {
+            setStatus(status, "Accepted. Opening\u2026", "good");
+            setTimeout(function () { window.location.href = data.redirect; }, 600);
+          } else if (data && data.error === "invalid") {
+            setStatus(status, "Code not recognized.", "bad");
+            btn.disabled = false;
+          } else {
+            setStatus(status, "Server error. Try again in a moment.", "bad");
+            btn.disabled = false;
+          }
         } catch (e) {
-          setStatus(status, "Couldn\u2019t verify in this browser. Try a current Chrome / Safari / Firefox.", "bad");
-          btn.disabled = false;
-          return;
-        }
-
-        const valid = CONFIG.INVITE_CODE_HASHES.includes(hash);
-        if (!valid) {
-          setStatus(status, "Code not recognized.", "bad");
-          btn.disabled = false;
-          return;
-        }
-
-        if (CONFIG.DEMO_URL) {
-          setStatus(status, "Accepted. Opening\u2026", "good");
-          setTimeout(function () { window.location.href = CONFIG.DEMO_URL; }, 700);
-        } else {
-          setStatus(
-            status,
-            "Accepted. Demo link will follow by email shortly.",
-            "good"
-          );
+          setStatus(status, "Network error. Check your connection and retry.", "bad");
           btn.disabled = false;
         }
       });
@@ -1554,3 +1564,4 @@
   </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
