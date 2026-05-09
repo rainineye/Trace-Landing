@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trace — Claim Intelligence Infrastructure</title>
-  <meta name="description" content="Trace · An instrument for contested public claims. Not a verdict. Not a summary. Coming soon, invite only." />
+  <meta name="description" content="Trace · An instrument for contested public claims. Not a verdict. Exhibit, don't verify. By invite only." />
 
   <meta property="og:title" content="Trace — Claim Intelligence Infrastructure" />
-  <meta property="og:description" content="An instrument for contested public claims. Not a verdict. Not a summary." />
+  <meta property="og:description" content="An instrument for contested public claims. Not a verdict. Exhibit, don't verify." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://traceintelligence.io" />
 
@@ -180,7 +180,8 @@
     .hero {
       position: relative;
       height: 100vh;       /* strict — fit above-fold exactly */
-      max-height: 100vh;
+      height: 100dvh;      /* dynamic viewport — shrinks with mobile keyboard so the input stays visible on focus */
+      max-height: 100dvh;
       padding: clamp(28px, 4.5vh, 48px) 0;     /* horizontal padding moved to stage */
       overflow: hidden;
       background: #0E0E10;
@@ -368,14 +369,14 @@
       z-index: 4;
       display: flex; flex-direction: column; justify-content: flex-start;
       align-items: center;
-      padding: 28px 0 24px;
+      padding: clamp(18px, 3vh, 28px) 0 clamp(14px, 2.5vh, 24px);
       font-family: var(--mono);
     }
     .rail-label {
       writing-mode: vertical-rl;
       transform: rotate(180deg);
-      font-size: 9.5px;
-      letter-spacing: 1.6px;
+      font-size: clamp(7px, 0.92vh, 9.5px);
+      letter-spacing: clamp(1.2px, 0.18vh, 1.6px);
       text-transform: uppercase;
       color: var(--hero-fg-soft);
       white-space: nowrap;
@@ -385,23 +386,23 @@
       color: #B8902E;       /* brass — was hero-fg white */
       display: inline-flex;
       align-items: center;
-      justify-content: center;          /* center the cluster — barcodes hug text via gap */
-      gap: clamp(10px, 1.8vh, 18px);    /* small gap between barcode and text */
-      flex: 1;                          /* still grows to fill column space */
-      margin-top: clamp(10px, 1.8vh, 18px);     /* tight gap below "Claim Intelligence Infrastructure" */
-      margin-bottom: clamp(10px, 1.8vh, 18px);  /* tight gap above VER 0.5 */
+      justify-content: flex-start;       /* cluster anchors to top of rail-accent's space — sits in upper-middle of rail */
+      gap: clamp(5px, 1vh, 12px);        /* small gap between barcode and text — scales with vh */
+      flex: 1;                            /* fill remaining column so VER 0.5 ends up at bottom */
+      margin-top: clamp(10px, 2vh, 28px); /* gap below "Claim Intelligence Infrastructure" */
+      margin-bottom: clamp(10px, 2vh, 28px);  /* gap above VER 0.5 */
     }
 
     /* Barcode — inline SVG flanking the accent label.
        Bars are oriented HORIZONTALLY in the SVG viewBox (rect with full width,
        varying y/height). After the rail-label's writing-mode + 180deg rotation,
        these horizontal SVG bars render as bars PARALLEL to the rail axis on
-       screen — proper barcode orientation. Length scales with viewport height
-       so barcodes stay visually substantial while hugging the text. */
+       screen — proper barcode orientation. Compact length keeps the cluster
+       fitting in its allocated band of the rail. */
     svg.rail-bar {
       display: inline-block;
       width: 8px;
-      height: clamp(60px, 11vh, 92px);
+      height: clamp(18px, 3.4vh, 40px);
       flex-shrink: 0;
       opacity: 0.85;
       vertical-align: middle;
@@ -849,7 +850,7 @@
       background: transparent;
       padding: 14px 16px;
       font-family: var(--mono);
-      font-size: 13px;
+      font-size: 16px;          /* iOS Safari auto-zooms inputs <16px on focus — set to 16 to prevent the zoom that hides the field */
       color: var(--ink);
       letter-spacing: 0.2px;
     }
@@ -923,7 +924,8 @@
     .modal-panel {
       position: relative;
       background: rgba(20, 20, 26, 0.88);              /* dark archive panel — slightly translucent so backdrop blur reads through */
-      border: 1px solid rgba(184, 144, 46, 0.45);     /* brass border */
+      border: 1px solid rgba(221, 138, 124, 0.5);     /* rust — matches "By Invite Only" eyebrow color (--hero-accent #DD8A7C) */
+      border-radius: 3px;                              /* subtle rounded corner */
       color: #F2EFE5;                                  /* paper text on dark */
       padding: clamp(40px, 5vw, 56px) clamp(28px, 4vw, 40px) clamp(28px, 3.5vw, 36px);
       max-width: 440px;
@@ -962,12 +964,12 @@
       transition: color 0.15s;
       border-radius: 2px;
     }
-    .modal-close:hover { color: #B8902E; background: transparent; }
+    .modal-close:hover { color: #DD8A7C; background: transparent; }
     .modal-tag {
       font-family: var(--mono);
       font-size: 11px; letter-spacing: 1.4px;
       text-transform: uppercase;
-      color: #B8902E;                                  /* brass — matches rail accent */
+      color: #DD8A7C;                                  /* rust — matches "By Invite Only" eyebrow */
       margin-bottom: clamp(22px, 3vh, 32px);
     }
 
@@ -976,10 +978,10 @@
       background: transparent;
       border-color: rgba(242, 239, 229, 0.2);
     }
-    .modal-panel .field:focus-within { border-color: rgba(184, 144, 46, 0.7); }
+    .modal-panel .field:focus-within { border-color: rgba(221, 138, 124, 0.7); }
     .modal-panel .field input {
       color: #F2EFE5;
-      caret-color: #B8902E;
+      caret-color: #DD8A7C;
     }
     .modal-panel .field input::placeholder {
       color: rgba(242, 239, 229, 0.35);
@@ -992,7 +994,7 @@
       color: #F2EFE5;
     }
     .modal-panel .field button:hover {
-      background: rgba(184, 144, 46, 0.12);
+      background: rgba(221, 138, 124, 0.12);
       color: #F2EFE5;
     }
     .modal-panel .status {
@@ -1108,7 +1110,7 @@
       .hero-brand-meta { font-size: 9px; letter-spacing: 0.8px; }
     }
     @media (max-width: 480px) {
-      .field input { padding: 12px 14px; font-size: 12.5px; }
+      .field input { padding: 12px 14px; font-size: 16px; }   /* keep ≥16px to prevent iOS auto-zoom */
       .field button { padding: 0 16px; font-size: 10px; }
     }
 
@@ -1154,48 +1156,27 @@
       <aside class="hero-rail" aria-hidden="true">
         <span class="rail-label">Claim Intelligence Infrastructure</span>
         <span class="rail-label rail-accent">
-          <svg class="rail-bar" viewBox="0 0 8 60" preserveAspectRatio="none" aria-hidden="true">
+          <svg class="rail-bar" viewBox="0 0 8 32" preserveAspectRatio="none" aria-hidden="true">
             <g fill="currentColor">
               <rect y="0.0"  height="0.8" width="8"/>
-              <rect y="3.0"  height="0.4" width="8"/>
-              <rect y="5.6"  height="1.2" width="8"/>
-              <rect y="9.6"  height="0.6" width="8"/>
-              <rect y="13.0" height="1.0" width="8"/>
-              <rect y="17.4" height="0.4" width="8"/>
-              <rect y="20.0" height="1.4" width="8"/>
-              <rect y="25.0" height="0.6" width="8"/>
-              <rect y="28.0" height="0.8" width="8"/>
-              <rect y="32.0" height="1.0" width="8"/>
-              <rect y="36.4" height="0.4" width="8"/>
-              <rect y="39.0" height="1.2" width="8"/>
-              <rect y="43.4" height="0.6" width="8"/>
-              <rect y="47.0" height="0.8" width="8"/>
-              <rect y="51.0" height="1.0" width="8"/>
-              <rect y="55.4" height="0.4" width="8"/>
-              <rect y="58.0" height="1.2" width="8"/>
+              <rect y="4.6"  height="1.2" width="8"/>
+              <rect y="10.0" height="0.6" width="8"/>
+              <rect y="14.4" height="1.4" width="8"/>
+              <rect y="20.0" height="0.4" width="8"/>
+              <rect y="24.0" height="1.0" width="8"/>
+              <rect y="29.4" height="0.8" width="8"/>
             </g>
           </svg>
           Converging Reality · Asymptotic Truth
-          <svg class="rail-bar" viewBox="0 0 8 60" preserveAspectRatio="none" aria-hidden="true">
+          <svg class="rail-bar" viewBox="0 0 8 32" preserveAspectRatio="none" aria-hidden="true">
             <g fill="currentColor">
               <rect y="0.4"  height="1.0" width="8"/>
-              <rect y="3.6"  height="0.6" width="8"/>
-              <rect y="6.4"  height="0.4" width="8"/>
-              <rect y="9.0"  height="1.4" width="8"/>
-              <rect y="13.6" height="0.6" width="8"/>
-              <rect y="16.4" height="1.0" width="8"/>
-              <rect y="20.0" height="0.4" width="8"/>
-              <rect y="23.0" height="0.8" width="8"/>
-              <rect y="27.0" height="1.2" width="8"/>
-              <rect y="31.4" height="0.6" width="8"/>
-              <rect y="34.6" height="0.8" width="8"/>
-              <rect y="38.4" height="0.4" width="8"/>
-              <rect y="41.4" height="1.4" width="8"/>
-              <rect y="46.0" height="0.6" width="8"/>
-              <rect y="49.0" height="0.8" width="8"/>
-              <rect y="53.0" height="1.0" width="8"/>
-              <rect y="57.0" height="0.4" width="8"/>
-              <rect y="59.0" height="0.8" width="8"/>
+              <rect y="4.6"  height="0.6" width="8"/>
+              <rect y="9.4"  height="1.2" width="8"/>
+              <rect y="15.0" height="0.4" width="8"/>
+              <rect y="18.0" height="1.0" width="8"/>
+              <rect y="22.6" height="0.8" width="8"/>
+              <rect y="27.0" height="1.4" width="8"/>
             </g>
           </svg>
         </span>
