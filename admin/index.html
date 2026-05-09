@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trace · Admin</title>
+  <style>
+    :root {
+      --paper: #FAF8F3;
+      --paper-deep: #F2EEE4;
+      --ink: #1A1A1A;
+      --ink-soft: #5A5147;
+      --ink-mute: #9D968B;
+      --primary: #A03A2C;
+      --good: #2F6B3A;
+      --rule: #D9D4C7;
+      --rule-soft: #E8E3D6;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 40px 24px 80px;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 16px; margin-bottom: 32px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .dot { width: 10px; height: 10px; background: var(--primary); border-radius: 50%; }
+    .brand { font-family: "Fraunces", Georgia, serif; font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+    .tag {
+      margin-left: auto;
+      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+      font-size: 10px; color: var(--ink-mute); letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    h1 { font-family: "Fraunces", Georgia, serif; font-size: 24px; font-weight: 400; margin: 0 0 6px; letter-spacing: -0.3px; }
+    .sub { color: var(--ink-soft); margin: 0 0 28px; font-size: 13.5px; }
+    section { margin-bottom: 40px; }
+    section h2 {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--ink-mute); margin: 0 0 12px; font-weight: 500;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--paper); }
+    th, td {
+      text-align: left; padding: 10px 12px; vertical-align: middle;
+      border-bottom: 1px solid var(--rule-soft); font-size: 13px;
+    }
+    th {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 10.5px; color: var(--ink-mute); letter-spacing: 0.6px; text-transform: uppercase;
+      font-weight: 500; border-bottom: 1px solid var(--rule);
+    }
+    td.mono, td .mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+    .pill {
+      display: inline-block; padding: 2px 7px; border-radius: 999px;
+      font-family: ui-monospace, Menlo, monospace; font-size: 10px;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .pill.requested { background: #fdf2c7; color: #7a5b0d; }
+    .pill.approved  { background: #dceadd; color: #2c5a36; }
+    .pill.rejected  { background: #efd6d3; color: #762b1f; }
+    .pill.redeemed  { background: #d4ddef; color: #1f3a76; }
+
+    button {
+      font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 6px 10px; border-radius: 2px; border: 1px solid var(--rule);
+      background: var(--paper-deep); color: var(--ink); cursor: pointer;
+      transition: background .12s, color .12s, border-color .12s;
+    }
+    button:hover:not(:disabled) { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    button.primary:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); }
+    button.danger:hover:not(:disabled)  { background: var(--primary); border-color: var(--primary); color: var(--paper); }
+    button:disabled { opacity: .45; cursor: default; }
+    button + button { margin-left: 6px; }
+
+    .empty {
+      padding: 24px 0; color: var(--ink-mute);
+      font-style: italic; font-size: 13.5px;
+    }
+
+    .gate {
+      max-width: 380px; margin: 80px auto 0;
+      padding: 28px; border: 1px solid var(--rule); background: var(--paper-deep);
+      border-radius: 4px;
+    }
+    .gate h1 { font-size: 18px; margin-bottom: 14px; }
+    .gate label {
+      display: block; font-family: ui-monospace, Menlo, monospace; font-size: 10px;
+      color: var(--ink-mute); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .gate input {
+      width: 100%; padding: 10px 12px; font-family: ui-monospace, Menlo, monospace;
+      font-size: 13px; border: 1px solid var(--rule); border-radius: 2px;
+      background: var(--paper); color: var(--ink); outline: none;
+    }
+    .gate input:focus { border-color: var(--ink); }
+    .gate button { width: 100%; margin-top: 16px; padding: 10px 12px; }
+
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--ink); color: var(--paper); padding: 10px 16px;
+      font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; letter-spacing: 0.5px;
+      border-radius: 2px; opacity: 0; transition: opacity .2s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .err { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="appRoot"><!-- populated by JS --></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      const $ = (sel, root) => (root || document).querySelector(sel);
+      const root = $("#appRoot");
+      const toastEl = $("#toast");
+      let toastTimer;
+      const toast = (msg, isErr) => {
+        toastEl.textContent = msg;
+        toastEl.classList.toggle("err", !!isErr);
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1800);
+      };
+
+      // ---- token from URL or sessionStorage ---------------------------------
+      const url = new URL(location.href);
+      let token = url.searchParams.get("token") || sessionStorage.getItem("trace_admin_token") || "";
+
+      function api(path, opts) {
+        opts = opts || {};
+        opts.headers = Object.assign(
+          { "Content-Type": "application/json" },
+          opts.headers || {},
+          { "Authorization": "Bearer " + token }
+        );
+        return fetch(path, opts).then(async (r) => {
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw Object.assign(new Error(data.error || r.statusText), { status: r.status, data });
+          return data;
+        });
+      }
+
+      // ---- gate (token entry) -----------------------------------------------
+      function renderGate(message) {
+        root.innerHTML = `
+          <div class="gate">
+            <h1>Admin access</h1>
+            <label>Token</label>
+            <input id="tokenInput" type="password" autocomplete="off" spellcheck="false"
+                   placeholder="paste ADMIN_TOKEN" />
+            <button class="primary" id="tokenSubmit">Enter</button>
+            <div class="empty" id="gateMsg" style="padding-top:14px">${message || ""}</div>
+          </div>
+        `;
+        const inp = $("#tokenInput");
+        inp.focus();
+        const go = () => {
+          const v = inp.value.trim();
+          if (!v) return;
+          token = v;
+          sessionStorage.setItem("trace_admin_token", token);
+          // Reflect in URL so bookmarking works (private profiles only).
+          url.searchParams.set("token", token);
+          history.replaceState({}, "", url.toString());
+          load();
+        };
+        $("#tokenSubmit").onclick = go;
+        inp.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+      }
+
+      // ---- main render ------------------------------------------------------
+      function fmtDate(s) {
+        if (!s) return "—";
+        const d = new Date(s);
+        if (isNaN(+d)) return s;
+        return d.toLocaleString();
+      }
+      function pill(status, redeemed) {
+        if (redeemed && status === "approved") return `<span class="pill redeemed">redeemed</span>`;
+        return `<span class="pill ${status}">${status}</span>`;
+      }
+
+      function renderDashboard(rows) {
+        const pending  = rows.filter((r) => r.status === "requested");
+        const approved = rows.filter((r) => r.status === "approved");
+        const other    = rows.filter((r) => r.status !== "requested" && r.status !== "approved");
+
+        root.innerHTML = `
+          <header>
+            <span class="dot"></span>
+            <span class="brand">Trace</span>
+            <span class="tag">Admin · invites</span>
+          </header>
+
+          <h1>Invite review</h1>
+          <p class="sub">
+            Pending requests show up below. Click <em>Approve</em>, copy the code, send it to the requester.
+          </p>
+
+          <section>
+            <h2>Pending · ${pending.length}</h2>
+            ${pending.length === 0
+              ? `<div class="empty">No pending requests.</div>`
+              : `<table>
+                  <thead><tr>
+                    <th style="width: 36%">Email</th>
+                    <th>Requested</th>
+                    <th>Status</th>
+                    <th style="text-align:right">Actions</th>
+                  </tr></thead>
+                  <tbody>
+                    ${pending.map((r) => `
+                      <tr data-email="${escapeHtml(r.email)}">
+                        <td class="mono">${escapeHtml(r.email)}</td>
+                        <td>${fmtDate(r.created_at)}</td>
+                        <td>${pill(r.status, !!r.redeemed_at)}</td>
+                        <td style="text-align:right">
+                          <button class="primary" data-act="approve">Approve</button>
+                          <button class="danger"  data-act="reject">Reject</button>
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>`
+            }
+          </section>
+
+          <section>
+            <h2>Approved · ${approved.length}</h2>
+            ${approved.length === 0
+              ? `<div class="empty">No approved invites yet.</div>`
+              : `<table>
+                  <thead><tr>
+                    <th style="width: 30%">Email</th>
+                    <th>Code</th>
+                    <th>Approved</th>
+                    <th>Redeemed</th>
+                    <th>Visits</th>
+                    <th>Status</th>
+                    <th style="text-align:right">Actions</th>
+                  </tr></thead>
+                  <tbody>
+                    ${approved.map((r) => `
+                      <tr data-email="${escapeHtml(r.email)}">
+                        <td class="mono">${escapeHtml(r.email)}</td>
+                        <td><span class="mono">${escapeHtml(r.code || "—")}</span></td>
+                        <td>${fmtDate(r.approved_at)}</td>
+                        <td>${fmtDate(r.redeemed_at)}</td>
+                        <td>${r.demo_visits || 0}</td>
+                        <td>${pill(r.status, !!r.redeemed_at)}</td>
+                        <td style="text-align:right">
+                          <button data-act="copy">Copy code</button>
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>`
+            }
+          </section>
+
+          ${other.length === 0 ? "" : `
+          <section>
+            <h2>Other · ${other.length}</h2>
+            <table>
+              <thead><tr>
+                <th style="width: 36%">Email</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr></thead>
+              <tbody>
+                ${other.map((r) => `
+                  <tr>
+                    <td class="mono">${escapeHtml(r.email)}</td>
+                    <td>${pill(r.status, false)}</td>
+                    <td>${fmtDate(r.created_at)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </section>
+          `}
+        `;
+
+        root.querySelectorAll("button[data-act]").forEach((btn) => {
+          btn.addEventListener("click", onAction);
+        });
+      }
+
+      async function onAction(ev) {
+        const btn = ev.currentTarget;
+        const tr = btn.closest("tr");
+        const email = tr && tr.dataset.email;
+        const act = btn.dataset.act;
+        if (!email || !act) return;
+
+        if (act === "copy") {
+          const codeEl = tr.querySelector("td .mono");
+          if (codeEl) {
+            try {
+              await navigator.clipboard.writeText(codeEl.textContent.trim());
+              toast("Code copied to clipboard");
+            } catch {
+              toast("Copy failed — select & copy manually", true);
+            }
+          }
+          return;
+        }
+
+        if (act === "approve") {
+          if (!confirm(`Approve ${email}?\nA code will be activated for them.`)) return;
+          btn.disabled = true;
+          try {
+            const data = await api("/api/admin/approve", {
+              method: "POST",
+              body: JSON.stringify({ email }),
+            });
+            const code = data.code;
+            try {
+              await navigator.clipboard.writeText(code);
+              toast(`Approved · code ${code} copied`);
+            } catch {
+              toast(`Approved · code: ${code}`);
+            }
+            await load();
+          } catch (err) {
+            toast("Approve failed: " + (err.message || "error"), true);
+            btn.disabled = false;
+          }
+          return;
+        }
+
+        if (act === "reject") {
+          if (!confirm(`Reject ${email}? They won't be able to redeem.`)) return;
+          btn.disabled = true;
+          try {
+            await api("/api/admin/reject", {
+              method: "POST",
+              body: JSON.stringify({ email }),
+            });
+            toast(`${email} rejected`);
+            await load();
+          } catch (err) {
+            toast("Reject failed: " + (err.message || "error"), true);
+            btn.disabled = false;
+          }
+          return;
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      }
+
+      // ---- bootstrap --------------------------------------------------------
+      async function load() {
+        if (!token) return renderGate();
+        try {
+          const data = await api("/api/admin/list-all");
+          renderDashboard(data.rows || []);
+        } catch (err) {
+          if (err.status === 401) {
+            sessionStorage.removeItem("trace_admin_token");
+            token = "";
+            renderGate("Token rejected. Try again.");
+          } else if (err.status === 503) {
+            root.innerHTML = `<div class="empty">Admin is disabled — set <code>ADMIN_TOKEN</code> as a worker secret first.</div>`;
+          } else {
+            root.innerHTML = `<div class="empty err">Load failed: ${escapeHtml(err.message || "error")}</div>`;
+          }
+        }
+      }
+
+      load();
+    })();
+  </script>
+</body>
+</html>

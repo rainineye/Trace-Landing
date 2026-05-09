@@ -2,6 +2,7 @@
 # Cloudflare Workers Static Assets respects this file.
 
 src/
+migrations/
 .wrangler/
 .git/
 node_modules/

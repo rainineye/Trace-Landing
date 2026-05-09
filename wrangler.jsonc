@@ -14,8 +14,8 @@
 		"nodejs_compat"
 	],
 	"vars": {
-		"DEMO_URL": "https://demo.0xmian.com",
-		"DEMO_ORIGIN": "https://demo.0xmian.com"
+		"DEMO_URL": "https://demo.traceintelligence.io",
+		"ALLOWED_DEMO_ORIGINS": "https://demo.traceintelligence.io,https://demo.0xmian.com"
 	},
 	"d1_databases": [
 		{
