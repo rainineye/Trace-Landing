@@ -1363,13 +1363,16 @@
           if (res.ok && data.ok) {
             setStatus(
               status,
-              "Code sent. Check your inbox (and spam). If it doesn\u2019t arrive, write to " +
-                CONFIG.INVITE_INBOX + ".",
+              "Request received. Invites go out in batches \u2014 once yours is approved " +
+                "(usually within a few days), the code lands in your inbox. Check spam too. " +
+                "Questions? " + CONFIG.INVITE_INBOX + ".",
               "good"
             );
             input.value = "";
           } else if (data && data.error === "invalid_email") {
             setStatus(status, "That doesn\u2019t look like a valid email — try again.", "bad");
+          } else if (data && data.error === "rate_limited") {
+            setStatus(status, "Too many requests from your network — try again in an hour.", "bad");
           } else {
             setStatus(
               status,

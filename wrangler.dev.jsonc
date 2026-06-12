@@ -1,0 +1,28 @@
+{
+	// Local-dev-only config. The production config is wrangler.jsonc; the only
+	// difference is assets.directory points at .devassets/ (a staged copy of
+	// index.html + admin/) so wrangler's file-watcher doesn't loop on .wrangler/.
+	// Run: npx wrangler dev -c wrangler.dev.jsonc
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "tracelanding",
+	"compatibility_date": "2026-05-08",
+	"main": "src/index.js",
+	"assets": {
+		"directory": ".devassets",
+		"binding": "ASSETS"
+	},
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"vars": {
+		"DEMO_URL": "https://demo.traceintelligence.io",
+		"ALLOWED_DEMO_ORIGINS": "https://demo.traceintelligence.io,https://demo.0xmian.com"
+	},
+	"d1_databases": [
+		{
+			"binding": "trace_invites",
+			"database_name": "trace-invites",
+			"database_id": "76c1fe12-a14f-40c5-bd5b-52808e74c39b"
+		}
+	]
+}

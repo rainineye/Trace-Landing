@@ -4,6 +4,8 @@
 src/
 migrations/
 .wrangler/
+.devassets/
+wrangler.dev.jsonc
 .git/
 node_modules/
 .gitignore

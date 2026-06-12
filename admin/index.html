@@ -70,6 +70,44 @@
     .pill.rejected  { background: #efd6d3; color: #762b1f; }
     .pill.redeemed  { background: #d4ddef; color: #1f3a76; }
 
+    /* ---- dashboard: funnel cards + activity chart ---- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+      gap: 1px; background: var(--rule);
+      border: 1px solid var(--rule); margin-bottom: 16px;
+    }
+    .stat { background: var(--paper); padding: 14px 16px 12px; }
+    .stat .n { font-family: "Fraunces", Georgia, serif; font-size: 28px; line-height: 1.05; letter-spacing: -0.5px; }
+    .stat .l {
+      font-family: ui-monospace, Menlo, monospace; font-size: 10px;
+      letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-mute); margin-top: 6px;
+    }
+    .stat .d { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; }
+    .stat .d.warn { color: var(--primary); }
+
+    .chart-box { border: 1px solid var(--rule); background: var(--paper); padding: 14px 16px 10px; margin-bottom: 16px; }
+    .chart {
+      display: flex; align-items: flex-end; gap: 5px;
+      height: 84px; border-bottom: 1px solid var(--rule-soft); padding-bottom: 1px;
+    }
+    .chart .day { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 100%; }
+    .chart .bar { width: 42%; min-height: 2px; background: var(--rule); }
+    .chart .bar.appr { background: var(--good); }
+    .chart .bar.zero { background: transparent; border-bottom: 2px solid var(--rule-soft); }
+    .chart-x {
+      display: flex; gap: 5px; margin-top: 5px;
+      font-family: ui-monospace, Menlo, monospace; font-size: 9px; color: var(--ink-mute);
+    }
+    .chart-x span { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; }
+    .legend {
+      display: flex; gap: 14px; margin-top: 8px;
+      font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: var(--ink-soft);
+    }
+    .legend i { display: inline-block; width: 9px; height: 9px; margin-right: 5px; vertical-align: -1px; }
+    .legend .sw-req  i { background: var(--rule); }
+    .legend .sw-appr i { background: var(--good); }
+
     button {
       font-family: ui-monospace, Menlo, monospace; font-size: 11px;
       letter-spacing: 0.5px; text-transform: uppercase;
@@ -193,6 +231,104 @@
         return `<span class="pill ${status}">${status}</span>`;
       }
 
+      // ---- funnel stats + 14-day activity chart -----------------------------
+      function pct(part, whole) {
+        if (!whole) return "—";
+        return Math.round((part / whole) * 100) + "%";
+      }
+
+      function renderStats(rows) {
+        const total    = rows.length;
+        const pending  = rows.filter((r) => r.status === "requested").length;
+        const approved = rows.filter((r) => r.status === "approved");
+        const emailed  = approved.filter((r) => r.email_sent_at).length;
+        const notEmailed = approved.length - emailed;
+        const redeemed = approved.filter((r) => r.redeemed_at).length;
+        const visited  = approved.filter((r) => (r.demo_visits || 0) > 0).length;
+        const visits   = approved.reduce((s, r) => s + (r.demo_visits || 0), 0);
+
+        return `
+          <div class="stats">
+            <div class="stat">
+              <div class="n">${total}</div>
+              <div class="l">Signups</div>
+              <div class="d">${pending} awaiting review</div>
+            </div>
+            <div class="stat">
+              <div class="n">${approved.length}</div>
+              <div class="l">Approved</div>
+              <div class="d">${pct(approved.length, total)} of signups</div>
+            </div>
+            <div class="stat">
+              <div class="n">${emailed}</div>
+              <div class="l">Code emailed</div>
+              <div class="d ${notEmailed > 0 ? "warn" : ""}">${
+                notEmailed > 0 ? notEmailed + " approved, not emailed" : "all approved notified"
+              }</div>
+            </div>
+            <div class="stat">
+              <div class="n">${redeemed}</div>
+              <div class="l">Logged in</div>
+              <div class="d">${pct(redeemed, approved.length)} of approved</div>
+            </div>
+            <div class="stat">
+              <div class="n">${visited}</div>
+              <div class="l">Visited demo</div>
+              <div class="d">${visits} visit${visits === 1 ? "" : "s"} total</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderChart(rows) {
+        const DAYS = 14;
+        const days = [];
+        const now = new Date();
+        for (let i = DAYS - 1; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+          days.push({
+            key: d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"),
+            label: (d.getMonth() + 1) + "/" + d.getDate(),
+            req: 0, appr: 0,
+          });
+        }
+        const byKey = {};
+        days.forEach((d) => { byKey[d.key] = d; });
+        const localKey = (s) => {
+          const d = new Date(s);
+          if (isNaN(+d)) return null;
+          return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        };
+        rows.forEach((r) => {
+          const ck = r.created_at  && localKey(r.created_at);
+          const ak = r.approved_at && localKey(r.approved_at);
+          if (ck && byKey[ck]) byKey[ck].req++;
+          if (ak && byKey[ak]) byKey[ak].appr++;
+        });
+
+        const max = Math.max(1, ...days.map((d) => Math.max(d.req, d.appr)));
+        const h = (n) => Math.round((n / max) * 100);
+
+        return `
+          <div class="chart-box">
+            <h2 style="margin-bottom:10px">Last ${DAYS} days</h2>
+            <div class="chart">
+              ${days.map((d) => `
+                <div class="day" title="${d.label} · ${d.req} signup${d.req === 1 ? "" : "s"}, ${d.appr} approved">
+                  <span class="bar ${d.req === 0 ? "zero" : ""}" style="height:${h(d.req)}%"></span>
+                  <span class="bar appr ${d.appr === 0 ? "zero" : ""}" style="height:${h(d.appr)}%"></span>
+                </div>
+              `).join("")}
+            </div>
+            <div class="chart-x">${days.map((d, i) => `<span>${i % 2 === 0 ? d.label : ""}</span>`).join("")}</div>
+            <div class="legend">
+              <span class="sw-req"><i></i>Signups</span>
+              <span class="sw-appr"><i></i>Approved</span>
+            </div>
+          </div>
+        `;
+      }
+
       function renderDashboard(rows) {
         const pending  = rows.filter((r) => r.status === "requested");
         const approved = rows.filter((r) => r.status === "approved");
@@ -207,8 +343,12 @@
 
           <h1>Invite review</h1>
           <p class="sub">
-            Pending requests show up below. Click <em>Approve</em>, copy the code, send it to the requester.
+            Pending requests show up below. Click <em>Approve</em> — the code is emailed
+            automatically (and copied to your clipboard as backup).
           </p>
+
+          ${renderStats(rows)}
+          ${renderChart(rows)}
 
           <section>
             <h2>Pending · ${pending.length}</h2>
@@ -244,10 +384,11 @@
               ? `<div class="empty">No approved invites yet.</div>`
               : `<table>
                   <thead><tr>
-                    <th style="width: 30%">Email</th>
+                    <th style="width: 26%">Email</th>
                     <th>Code</th>
                     <th>Approved</th>
-                    <th>Redeemed</th>
+                    <th>Code emailed</th>
+                    <th>Logged in</th>
                     <th>Visits</th>
                     <th>Status</th>
                     <th style="text-align:right">Actions</th>
@@ -258,10 +399,12 @@
                         <td class="mono">${escapeHtml(r.email)}</td>
                         <td><span class="mono">${escapeHtml(r.code || "—")}</span></td>
                         <td>${fmtDate(r.approved_at)}</td>
+                        <td>${r.email_sent_at ? fmtDate(r.email_sent_at) : `<span class="err">not sent</span>`}</td>
                         <td>${fmtDate(r.redeemed_at)}</td>
                         <td>${r.demo_visits || 0}</td>
                         <td>${pill(r.status, !!r.redeemed_at)}</td>
                         <td style="text-align:right">
+                          <button data-act="email">${r.email_sent_at ? "Resend email" : "Send email"}</button>
                           <button data-act="copy">Copy code</button>
                         </td>
                       </tr>
@@ -328,15 +471,41 @@
               body: JSON.stringify({ email }),
             });
             const code = data.code;
+            // email_sent: true = Resend accepted it, false = send failed,
+            // null/undefined = no RESEND_API_KEY — email them the code yourself.
+            const mail =
+              data.email_sent === true  ? " · email sent" :
+              data.email_sent === false ? " · EMAIL FAILED — send manually" :
+                                          " · no email configured — send manually";
             try {
               await navigator.clipboard.writeText(code);
-              toast(`Approved · code ${code} copied`);
+              toast(`Approved · code ${code} copied${mail}`, data.email_sent === false);
             } catch {
-              toast(`Approved · code: ${code}`);
+              toast(`Approved · code: ${code}${mail}`, data.email_sent === false);
             }
             await load();
           } catch (err) {
             toast("Approve failed: " + (err.message || "error"), true);
+            btn.disabled = false;
+          }
+          return;
+        }
+
+        if (act === "email") {
+          btn.disabled = true;
+          try {
+            await api("/api/admin/resend-email", {
+              method: "POST",
+              body: JSON.stringify({ email }),
+            });
+            toast(`Code emailed to ${email}`);
+            await load();
+          } catch (err) {
+            const reason =
+              err.data && err.data.error === "email_not_configured" ? "RESEND_API_KEY not set" :
+              err.data && err.data.error === "send_failed"          ? "Resend rejected the send" :
+              (err.message || "error");
+            toast("Email failed: " + reason, true);
             btn.disabled = false;
           }
           return;

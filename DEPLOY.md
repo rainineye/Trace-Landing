@@ -42,10 +42,14 @@ If you're upgrading an existing deployment from the pre-approval flow:
 ```bash
 cd C:\Users\eau12\trace-landing
 wrangler d1 execute trace-invites --file=migrations/001_add_status.sql --remote
+wrangler d1 execute trace-invites --file=migrations/002_add_email_sent.sql --remote
+wrangler d1 execute trace-invites --file=migrations/003_add_rate_limits.sql --remote
 ```
 
-That adds the `status` and `approved_at` columns and backfills existing rows
-to `status='approved'` so previously-issued codes still work.
+001 adds the `status` and `approved_at` columns and backfills existing rows
+to `status='approved'` so previously-issued codes still work. 002 adds
+`email_sent_at` (dashboard tracks whether the code email actually went out).
+003 adds the `rate_limits` table (per-IP limit on /api/request-code).
 
 ## 1. Set the admin token (one-time)
 

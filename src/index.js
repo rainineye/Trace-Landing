@@ -22,6 +22,8 @@
 //   GET  /api/admin/list-all                           -> everything (for the dashboard)
 //   POST /api/admin/approve      { email }             -> approve & return code
 //   POST /api/admin/reject       { email }             -> mark rejected
+//   POST /api/admin/resend-email { email }             -> re-send code email (approved only)
+//   GET  /api/admin/email-preview?token=                -> rendered invite email (browser)
 // ============================================================================
 
 export default {
@@ -44,6 +46,17 @@ export default {
     if (p === "/api/admin/list-all"     && m === "GET")  return adminGuard(request, env, () => handleListAll(env));
     if (p === "/api/admin/approve"      && m === "POST") return adminGuard(request, env, () => handleApprove(request, env));
     if (p === "/api/admin/reject"       && m === "POST") return adminGuard(request, env, () => handleReject(request, env));
+    if (p === "/api/admin/resend-email" && m === "POST") return adminGuard(request, env, () => handleResendEmail(request, env));
+
+    // Browser-viewable render of the invite email (token via query string
+    // since you can't set headers on a plain navigation).
+    if (p === "/api/admin/email-preview" && m === "GET") {
+      const t = url.searchParams.get("token") || "";
+      if (!env.ADMIN_TOKEN || t !== env.ADMIN_TOKEN) return json({ ok: false, error: "unauthorized" }, 401);
+      return new Response(inviteEmailHtml("k7mwp3qz"), {
+        headers: { "Content-Type": "text/html;charset=utf-8" },
+      });
+    }
 
     // ------- static fallback ------------------------------------------------
     return env.ASSETS.fetch(request);
@@ -64,6 +77,12 @@ async function handleRequestCode(request, env) {
 
   const email = (body && body.email ? String(body.email) : "").toLowerCase().trim();
   if (!isEmail(email)) return json({ ok: false, error: "invalid_email" }, 400);
+
+  // Per-IP rate limit; fail open if the check itself errors.
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  try {
+    if (await isRateLimited(env, ip)) return json({ ok: false, error: "rate_limited" }, 429);
+  } catch { /* fail open */ }
 
   try {
     const existing = await env.trace_invites
@@ -202,8 +221,8 @@ async function handleListPending(env) {
 async function handleListAll(env) {
   const { results } = await env.trace_invites
     .prepare(
-      `SELECT email, code, status, created_at, approved_at, redeemed_at,
-              demo_first_visit, demo_visits
+      `SELECT email, code, status, created_at, approved_at, email_sent_at,
+              redeemed_at, demo_first_visit, demo_visits
          FROM invites
          ORDER BY created_at DESC`
     )
@@ -234,12 +253,37 @@ async function handleApprove(request, env) {
     .bind(new Date().toISOString(), email)
     .run();
 
-  // Best-effort email send (silent if RESEND_API_KEY unset).
-  if (env.RESEND_API_KEY) {
-    try { await sendInviteEmail(env.RESEND_API_KEY, email, row.code); } catch { /* swallow */ }
-  }
+  // email_sent: true = delivered to Resend, false = attempted but failed,
+  // null = RESEND_API_KEY not configured (manual email needed).
+  const emailSent = await trySendInviteEmail(env, email, row.code);
 
-  return json({ ok: true, email, code: row.code });
+  return json({ ok: true, email, code: row.code, email_sent: emailSent });
+}
+
+// ---------------------------------------------------------------------------
+// /api/admin/resend-email
+// Body: { email }
+// Re-sends the invite-code email for an approved row — for lost codes or
+// failed/missing sends. Stamps email_sent_at on success.
+// ---------------------------------------------------------------------------
+async function handleResendEmail(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
+
+  const email = (body && body.email ? String(body.email) : "").toLowerCase().trim();
+  if (!isEmail(email)) return json({ ok: false, error: "invalid_email" }, 400);
+
+  const row = await env.trace_invites
+    .prepare("SELECT email, code, status FROM invites WHERE email = ?")
+    .bind(email)
+    .first();
+  if (!row) return json({ ok: false, error: "not_found" }, 404);
+  if (row.status !== "approved") return json({ ok: false, error: "not_approved" }, 409);
+
+  const sent = await trySendInviteEmail(env, email, row.code);
+  if (sent === null) return json({ ok: false, error: "email_not_configured" }, 503);
+  if (!sent) return json({ ok: false, error: "send_failed" }, 502);
+  return json({ ok: true, email, email_sent: true });
 }
 
 async function handleReject(request, env) {
@@ -310,6 +354,53 @@ function jsonCors(request, env, data, status = 200) {
   });
 }
 
+// Fixed-window per-IP limit: REQUESTS_PER_HOUR requests to /api/request-code.
+// One row per IP in rate_limits; the window resets in place, so the table
+// stays as small as the number of distinct IPs seen in the current hour.
+const REQUESTS_PER_HOUR = 5;
+
+async function isRateLimited(env, ip) {
+  const windowStart = Math.floor(Date.now() / 3600000); // hour bucket
+  const row = await env.trace_invites
+    .prepare("SELECT window_start, count FROM rate_limits WHERE ip = ?")
+    .bind(ip)
+    .first();
+  if (row && row.window_start === windowStart && row.count >= REQUESTS_PER_HOUR) return true;
+
+  await env.trace_invites
+    .prepare(
+      `INSERT INTO rate_limits (ip, window_start, count) VALUES (?, ?, 1)
+       ON CONFLICT(ip) DO UPDATE SET
+         count = CASE WHEN window_start = excluded.window_start THEN count + 1 ELSE 1 END,
+         window_start = excluded.window_start`
+    )
+    .bind(ip, windowStart)
+    .run();
+  return false;
+}
+
+// Sends the invite email and stamps email_sent_at on success.
+// Returns: true = sent, false = attempted but failed, null = no RESEND_API_KEY.
+async function trySendInviteEmail(env, email, code) {
+  if (!env.RESEND_API_KEY) return null;
+  let sent = false;
+  try {
+    const res = await sendInviteEmail(env.RESEND_API_KEY, email, code);
+    sent = res.ok;
+  } catch {
+    sent = false;
+  }
+  if (sent) {
+    try {
+      await env.trace_invites
+        .prepare("UPDATE invites SET email_sent_at = ? WHERE email = ?")
+        .bind(new Date().toISOString(), email)
+        .run();
+    } catch { /* the send already happened; don't fail the caller */ }
+  }
+  return sent;
+}
+
 async function sendInviteEmail(apiKey, to, code) {
   return fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -318,17 +409,69 @@ async function sendInviteEmail(apiKey, to, code) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Trace <hello@traceintelligence.io>",
+      from: "Trace <info@traceintelligence.io>",
       to: [to],
       subject: "Your Trace access code",
-      html:
-        `<p style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.55;">` +
-        `Your invite has been approved. Access code:</p>` +
-        `<p style="font-family:ui-monospace,Menlo,monospace;font-size:22px;letter-spacing:2px;">` +
-        `<strong>${code}</strong></p>` +
-        `<p style="font-family:system-ui,sans-serif;font-size:14px;color:#555;">` +
-        `Enter it at <a href="https://traceintelligence.io">traceintelligence.io</a> ` +
-        `&rarr; Demo to view the case file.</p>`,
+      html: inviteEmailHtml(code),
     }),
   });
+}
+
+// Archival/paper styling to match the landing page. Email-safe: tables,
+// inline styles, system serif (Georgia) + monospace only.
+function inviteEmailHtml(code) {
+  return `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background:#FAF8F3;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF8F3;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;border:1px solid #D9D4C7;background:#FAF8F3;">
+          <tr>
+            <td style="padding:26px 32px 0;">
+              <span style="font-family:'Courier New',Courier,monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#A03A2C;">[ Trace &middot; Access ]</span>
+              <div style="height:1px;background:#D9D4C7;margin-top:16px;"></div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 6px;">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.35;color:#1A1A1A;">
+                Your invite has been <em>approved</em>.
+              </div>
+              <p style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.6;color:#5A5147;margin:14px 0 0;">
+                Use this access code to open the case file:
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 32px 6px;">
+              <div style="font-family:'Courier New',Courier,monospace;font-size:25px;letter-spacing:6px;color:#1A1A1A;border:1px solid #D9D4C7;background:#F2EEE4;padding:18px 12px;text-align:center;">${code}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 32px 26px;">
+              <p style="font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.6;color:#5A5147;margin:0;">
+                Enter it at <a href="https://traceintelligence.io" style="color:#A03A2C;">traceintelligence.io</a> &rarr; <strong>Demo</strong>.
+                The code is tied to this address &mdash; please don&rsquo;t pass it on.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 26px;">
+              <div style="height:1px;background:#D9D4C7;margin-bottom:14px;"></div>
+              <div style="font-family:'Courier New',Courier,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#9D968B;line-height:1.7;">
+                Trace &middot; An instrument for contested claims<br>
+                Built in Amsterdam &middot; MMXXVI
+              </div>
+              <p style="font-family:Georgia,'Times New Roman',serif;font-size:11.5px;color:#9D968B;margin:12px 0 0;">
+                You requested access at traceintelligence.io. If this wasn&rsquo;t you, you can ignore this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
