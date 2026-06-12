@@ -449,9 +449,23 @@ function inviteEmailHtml(code) {
             </td>
           </tr>
           <tr>
-            <td style="padding:14px 32px 26px;">
-              <p style="font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.6;color:#5A5147;margin:0;">
-                Enter it at <a href="https://traceintelligence.io" style="color:#A03A2C;">traceintelligence.io</a> &rarr; <strong>Demo</strong>.
+            <td align="center" style="padding:20px 32px 8px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#1A1A1A;border-radius:2px;">
+                    <a href="https://traceintelligence.io/?c=${code}"
+                       style="display:inline-block;padding:14px 30px;font-family:'Courier New',Courier,monospace;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#FAF8F3;text-decoration:none;">
+                      Open the case file &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 32px 26px;">
+              <p style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.6;color:#9D968B;margin:0;text-align:center;">
+                Or enter the code manually at <a href="https://traceintelligence.io" style="color:#A03A2C;">traceintelligence.io</a> &rarr; <strong>Demo</strong>.<br>
                 The code is tied to this address &mdash; please don&rsquo;t pass it on.
               </p>
             </td>

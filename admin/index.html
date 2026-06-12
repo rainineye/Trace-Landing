@@ -131,7 +131,7 @@
     button.icon:hover:not(:disabled) { background: var(--ink); color: var(--paper); border-color: var(--ink); }
     button.icon svg { width: 15px; height: 15px; display: block; }
     button.icon.sent { color: var(--good); }
-    button.icon.sent:hover:not(:disabled) { background: var(--good); border-color: var(--good); color: var(--paper); }
+    button.icon.sent:disabled { opacity: 1; } /* confirmation flash shouldn't look dimmed */
     .codecell { display: inline-flex; align-items: center; gap: 4px; }
 
     .empty {
@@ -427,10 +427,10 @@
                         <td>${r.demo_visits || 0}</td>
                         <td>${pill(r.status, !!r.redeemed_at)}</td>
                         <td style="text-align:right">
-                          <button class="icon ${r.email_sent_at ? "sent" : ""}" data-act="email"
+                          <button class="icon" data-act="email" data-sent="${r.email_sent_at ? "1" : ""}"
                             title="${r.email_sent_at ? "Emailed " + escapeHtml(fmtDate(r.email_sent_at)) + " — click to resend" : "Email code to requester"}"
                             aria-label="${r.email_sent_at ? "Resend code email" : "Send code email"}">
-                            ${r.email_sent_at ? ICONS.sent : ICONS.send}
+                            ${ICONS.send}
                           </button>
                         </td>
                       </tr>
@@ -519,15 +519,18 @@
 
         if (act === "email") {
           // Re-sending is deliberate; first send is one click.
-          if (btn.classList.contains("sent") && !confirm(`Resend the code email to ${email}?`)) return;
+          if (btn.dataset.sent && !confirm(`Resend the code email to ${email}?`)) return;
           btn.disabled = true;
           try {
             await api("/api/admin/resend-email", {
               method: "POST",
               body: JSON.stringify({ email }),
             });
+            // Flash a double-check as send confirmation, then re-render.
+            btn.classList.add("sent");
+            btn.innerHTML = ICONS.sent;
             toast(`Code emailed to ${email}`);
-            await load();
+            setTimeout(load, 1600);
           } catch (err) {
             const reason =
               err.data && err.data.error === "email_not_configured" ? "RESEND_API_KEY not set" :

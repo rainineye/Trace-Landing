@@ -1436,6 +1436,20 @@
           btn.disabled = false;
         }
       });
+
+      // Deep link from the invite email: /?c=<code> opens the modal, prefills
+      // the code and submits — one click from inbox to demo.
+      (function () {
+        const c = (new URLSearchParams(location.search).get("c") || "").trim();
+        if (!c) return;
+        history.replaceState({}, "", location.pathname + location.hash);
+        input.value = c;
+        const opener = document.getElementById("openModal");
+        if (opener) opener.click();
+        setTimeout(function () {
+          form.dispatchEvent(new Event("submit", { cancelable: true }));
+        }, 400);
+      })();
     })();
 
 
