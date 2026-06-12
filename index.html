@@ -893,6 +893,7 @@
       transition: opacity 0.2s, margin-top 0.2s, min-height 0.2s;
     }
     .status.show { opacity: 1; margin-top: 14px; min-height: 16px; }
+    .status a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
     .status.good { color: var(--good); }
     .status.bad { color: var(--primary); }
     .status.info { color: var(--ink-soft); }
@@ -1294,9 +1295,13 @@
     const CONFIG = {
       INVITE_INBOX: "Info@traceintelligence.io",
     };
+    const INBOX_LINK =
+      '<a href="mailto:' + CONFIG.INVITE_INBOX + '">' + CONFIG.INVITE_INBOX + "</a>";
 
-    function setStatus(el, text, tone) {
-      el.textContent = text;
+    // Messages are static app-controlled strings (never user input), so
+    // innerHTML is safe here and lets us embed the mailto link.
+    function setStatus(el, html, tone) {
+      el.innerHTML = html;
       el.classList.remove("good", "bad", "info");
       if (tone) el.classList.add(tone);
       el.classList.add("show");
@@ -1363,9 +1368,8 @@
           if (res.ok && data.ok) {
             setStatus(
               status,
-              "Request received. Invites go out in batches \u2014 once yours is approved " +
-                "(usually within a few days), the code lands in your inbox. Check spam too. " +
-                "Questions? " + CONFIG.INVITE_INBOX + ".",
+              "Request received. Invites go out in batches \u2014 once yours is approved, " +
+                "the code lands in your inbox. Questions? " + INBOX_LINK + ".",
               "good"
             );
             input.value = "";
@@ -1376,14 +1380,14 @@
           } else {
             setStatus(
               status,
-              "Couldn\u2019t reach the server. Try again, or email " + CONFIG.INVITE_INBOX + ".",
+              "Couldn\u2019t reach the server. Try again, or email " + INBOX_LINK + ".",
               "bad"
             );
           }
         } catch (e) {
           setStatus(
             status,
-            "Network error. Try again, or email " + CONFIG.INVITE_INBOX + ".",
+            "Network error. Try again, or email " + INBOX_LINK + ".",
             "bad"
           );
         } finally {

@@ -48,12 +48,16 @@ export default {
     if (p === "/api/admin/reject"       && m === "POST") return adminGuard(request, env, () => handleReject(request, env));
     if (p === "/api/admin/resend-email" && m === "POST") return adminGuard(request, env, () => handleResendEmail(request, env));
 
-    // Browser-viewable render of the invite email (token via query string
-    // since you can't set headers on a plain navigation).
+    // Browser-viewable render of the emails (token via query string since
+    // you can't set headers on a plain navigation). ?kind=confirm for the
+    // signup confirmation; default is the invite-code email.
     if (p === "/api/admin/email-preview" && m === "GET") {
       const t = url.searchParams.get("token") || "";
       if (!env.ADMIN_TOKEN || t !== env.ADMIN_TOKEN) return json({ ok: false, error: "unauthorized" }, 401);
-      return new Response(inviteEmailHtml("k7mwp3qz"), {
+      const html = url.searchParams.get("kind") === "confirm"
+        ? confirmationEmailHtml()
+        : inviteEmailHtml("k7mwp3qz");
+      return new Response(html, {
         headers: { "Content-Type": "text/html;charset=utf-8" },
       });
     }
@@ -98,6 +102,15 @@ async function handleRequestCode(request, env) {
         )
         .bind(email, code, new Date().toISOString())
         .run();
+
+      // Best-effort confirmation email — only for first-time signups (repeat
+      // submits stay silent so this can't be used to spam someone's inbox),
+      // and never blocks or fails the signup itself.
+      if (env.RESEND_API_KEY) {
+        try {
+          await sendEmail(env.RESEND_API_KEY, email, "Your Trace access request", confirmationEmailHtml());
+        } catch { /* non-fatal */ }
+      }
     }
     // If existing: do nothing. The user just gets a generic "we got it" response.
   } catch (err) {
@@ -401,7 +414,7 @@ async function trySendInviteEmail(env, email, code) {
   return sent;
 }
 
-async function sendInviteEmail(apiKey, to, code) {
+async function sendEmail(apiKey, to, subject, html) {
   return fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -411,15 +424,20 @@ async function sendInviteEmail(apiKey, to, code) {
     body: JSON.stringify({
       from: "Trace <info@traceintelligence.io>",
       to: [to],
-      subject: "Your Trace access code",
-      html: inviteEmailHtml(code),
+      subject,
+      html,
     }),
   });
 }
 
+async function sendInviteEmail(apiKey, to, code) {
+  return sendEmail(apiKey, to, "Your Trace access code", inviteEmailHtml(code));
+}
+
 // Archival/paper styling to match the landing page. Email-safe: tables,
 // inline styles, system serif (Georgia) + monospace only.
-function inviteEmailHtml(code) {
+// emailLayout wraps content rows in the shared letterhead (tag + rules + footer).
+function emailLayout(inner) {
   return `<!doctype html>
 <html>
 <body style="margin:0;padding:0;background:#FAF8F3;">
@@ -433,6 +451,29 @@ function inviteEmailHtml(code) {
               <div style="height:1px;background:#D9D4C7;margin-top:16px;"></div>
             </td>
           </tr>
+          ${inner}
+          <tr>
+            <td style="padding:0 32px 26px;">
+              <div style="height:1px;background:#D9D4C7;margin-bottom:14px;"></div>
+              <div style="font-family:'Courier New',Courier,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#9D968B;line-height:1.7;">
+                Trace &middot; An instrument for contested claims<br>
+                Built in Amsterdam &middot; MMXXVI
+              </div>
+              <p style="font-family:Georgia,'Times New Roman',serif;font-size:11.5px;color:#9D968B;margin:12px 0 0;">
+                You requested access at traceintelligence.io. If this wasn&rsquo;t you, you can ignore this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function inviteEmailHtml(code) {
+  return emailLayout(`
           <tr>
             <td style="padding:28px 32px 6px;">
               <div style="font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.35;color:#1A1A1A;">
@@ -469,23 +510,21 @@ function inviteEmailHtml(code) {
                 The code is tied to this address &mdash; please don&rsquo;t pass it on.
               </p>
             </td>
-          </tr>
+          </tr>`);
+}
+
+// Sent right after a new signup so the requester knows it worked.
+function confirmationEmailHtml() {
+  return emailLayout(`
           <tr>
-            <td style="padding:0 32px 26px;">
-              <div style="height:1px;background:#D9D4C7;margin-bottom:14px;"></div>
-              <div style="font-family:'Courier New',Courier,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#9D968B;line-height:1.7;">
-                Trace &middot; An instrument for contested claims<br>
-                Built in Amsterdam &middot; MMXXVI
+            <td style="padding:28px 32px 26px;">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.35;color:#1A1A1A;">
+                Your request has been <em>logged</em>.
               </div>
-              <p style="font-family:Georgia,'Times New Roman',serif;font-size:11.5px;color:#9D968B;margin:12px 0 0;">
-                You requested access at traceintelligence.io. If this wasn&rsquo;t you, you can ignore this email.
+              <p style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.6;color:#5A5147;margin:14px 0 0;">
+                Invites go out in batches. When yours is approved, the access code
+                will arrive in this inbox &mdash; no further action needed.
               </p>
             </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+          </tr>`);
 }
