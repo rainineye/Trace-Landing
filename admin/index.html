@@ -122,6 +122,18 @@
     button:disabled { opacity: .45; cursor: default; }
     button + button { margin-left: 6px; }
 
+    /* icon-only buttons (copy / send email) */
+    button.icon {
+      padding: 5px 6px; line-height: 0;
+      border: 1px solid transparent; background: transparent;
+      color: var(--ink-soft); border-radius: 2px;
+    }
+    button.icon:hover:not(:disabled) { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    button.icon svg { width: 15px; height: 15px; display: block; }
+    button.icon.sent { color: var(--good); }
+    button.icon.sent:hover:not(:disabled) { background: var(--good); border-color: var(--good); color: var(--paper); }
+    .codecell { display: inline-flex; align-items: center; gap: 4px; }
+
     .empty {
       padding: 24px 0; color: var(--ink-mute);
       font-style: italic; font-size: 13.5px;
@@ -230,6 +242,12 @@
         if (redeemed && status === "approved") return `<span class="pill redeemed">redeemed</span>`;
         return `<span class="pill ${status}">${status}</span>`;
       }
+
+      const ICONS = {
+        copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+        send: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>`,
+        sent: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 13l4 4L14 9"/><path d="M10 17l2 2L22 9"/></svg>`,
+      };
 
       // ---- funnel stats + 14-day activity chart -----------------------------
       function pct(part, whole) {
@@ -397,15 +415,23 @@
                     ${approved.map((r) => `
                       <tr data-email="${escapeHtml(r.email)}">
                         <td class="mono">${escapeHtml(r.email)}</td>
-                        <td><span class="mono">${escapeHtml(r.code || "—")}</span></td>
+                        <td>
+                          <span class="codecell">
+                            <span class="mono">${escapeHtml(r.code || "—")}</span>
+                            <button class="icon" data-act="copy" data-code="${escapeHtml(r.code || "")}" title="Copy code" aria-label="Copy code">${ICONS.copy}</button>
+                          </span>
+                        </td>
                         <td>${fmtDate(r.approved_at)}</td>
                         <td>${r.email_sent_at ? fmtDate(r.email_sent_at) : `<span class="err">not sent</span>`}</td>
                         <td>${fmtDate(r.redeemed_at)}</td>
                         <td>${r.demo_visits || 0}</td>
                         <td>${pill(r.status, !!r.redeemed_at)}</td>
                         <td style="text-align:right">
-                          <button data-act="email">${r.email_sent_at ? "Resend email" : "Send email"}</button>
-                          <button data-act="copy">Copy code</button>
+                          <button class="icon ${r.email_sent_at ? "sent" : ""}" data-act="email"
+                            title="${r.email_sent_at ? "Emailed " + escapeHtml(fmtDate(r.email_sent_at)) + " — click to resend" : "Email code to requester"}"
+                            aria-label="${r.email_sent_at ? "Resend code email" : "Send code email"}">
+                            ${r.email_sent_at ? ICONS.sent : ICONS.send}
+                          </button>
                         </td>
                       </tr>
                     `).join("")}
@@ -450,10 +476,10 @@
         if (!email || !act) return;
 
         if (act === "copy") {
-          const codeEl = tr.querySelector("td .mono");
-          if (codeEl) {
+          const code = btn.dataset.code || "";
+          if (code) {
             try {
-              await navigator.clipboard.writeText(codeEl.textContent.trim());
+              await navigator.clipboard.writeText(code);
               toast("Code copied to clipboard");
             } catch {
               toast("Copy failed — select & copy manually", true);
@@ -492,6 +518,8 @@
         }
 
         if (act === "email") {
+          // Re-sending is deliberate; first send is one click.
+          if (btn.classList.contains("sent") && !confirm(`Resend the code email to ${email}?`)) return;
           btn.disabled = true;
           try {
             await api("/api/admin/resend-email", {
