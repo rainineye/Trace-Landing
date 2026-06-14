@@ -520,15 +520,22 @@
     .hero .field input::placeholder {
       color: var(--hero-fg-mute);
     }
-    /* Override Chrome/Safari autofill: defaults to a bright light-blue fill
-       that clashes with the dark hero. Inset shadow paints a dim warm tone
-       matching the hero panel; text stays high-contrast paper. */
+    /* Override the browser autofill: it defaults to a bright light-blue fill
+       that clashes with the dark hero. The inset shadow paints a subtle warm
+       grey — a touch above the focus tint, reading like a faint translucent
+       highlight rather than a hard panel. Text stays high-contrast paper.
+       (box-shadow must be opaque to mask the UA fill; #211f26 ≈ paper @ ~9%
+       over the hero base, so it looks like the field's own glassy surface.) */
     .hero .field input:-webkit-autofill,
     .hero .field input:-webkit-autofill:hover,
     .hero .field input:-webkit-autofill:focus,
-    .hero .field input:-webkit-autofill:active {
+    .hero .field input:-webkit-autofill:active,
+    .hero .field input:autofill,
+    .hero .field input:autofill:hover,
+    .hero .field input:autofill:focus {
       -webkit-text-fill-color: var(--hero-fg);
-      -webkit-box-shadow: 0 0 0 1000px #16161a inset;
+      -webkit-box-shadow: 0 0 0 1000px #211f26 inset;
+      box-shadow: 0 0 0 1000px #211f26 inset;
       caret-color: var(--hero-accent);
       /* Chrome forces its own font + size on autofilled text; restore the
          field's mono face so it matches what the user types. !important is
@@ -1277,7 +1284,7 @@
                   required
                 />
                 <button type="submit">
-                  <span>Request Code</span>
+                  <span>Request</span>
                   <span class="btn-arr" aria-hidden="true">
                     <span class="btn-arr-track">
                       <span>→</span>
@@ -1429,7 +1436,7 @@
             setStatus(
               status,
               "Request received. Invites go out in batches \u2014 once yours is approved, " +
-                "the code lands in your inbox. Questions? " + INBOX_LINK + ".",
+                "the code lands in your inbox.",
               "good"
             );
             input.value = "";
