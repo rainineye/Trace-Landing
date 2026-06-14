@@ -1155,6 +1155,14 @@
       .hero-brand-wm { font-size: 18px; }
       .hero-brand-meta { font-size: 9px; letter-spacing: 0.8px; }
     }
+    /* Phones: the brand line + DEMO no longer fit on one row, so trim
+       "in development" and keep the brand left / DEMO hard-right, single line. */
+    @media (max-width: 600px) {
+      .hero-brand-dev { display: none; }
+      .hero-top { flex-wrap: nowrap; gap: 12px; }
+      .hero-brand { flex-wrap: nowrap; min-width: 0; }
+      .hero-demo-cta { flex-shrink: 0; }
+    }
     @media (max-width: 480px) {
       .field input { padding: 12px 14px; font-size: 16px; }   /* keep ≥16px to prevent iOS auto-zoom */
       .field button { padding: 0 16px; font-size: 10px; }
@@ -1240,8 +1248,7 @@
               Claim Intelligence
               <span class="sep">·</span>
               <span class="accent">v0.5</span>
-              <span class="sep">·</span>
-              in development
+              <span class="hero-brand-dev"><span class="sep">·</span> in development</span>
             </span>
           </div>
           <button type="button" class="hero-demo-cta" id="openModal" aria-haspopup="dialog" aria-controls="codeModal">
