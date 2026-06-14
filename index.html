@@ -205,6 +205,10 @@
       height: 100%;
       display: grid;
       grid-template-rows: auto 1fr auto;
+      /* minmax(0,1fr) caps the single column at the container width — without
+         it the implicit auto track grows to the email field's intrinsic
+         min-content and overflows the right padding on narrow screens */
+      grid-template-columns: minmax(0, 1fr);
       gap: clamp(20px, 3.5vh, 40px);
       padding-left: clamp(40px, 7vw, 100px);          /* left content edge */
       padding-right: calc(64px + 48px);               /* rail width + 48px gap → DEMO/ver land here */
@@ -409,12 +413,16 @@
     }
     .rail-meta {
       writing-mode: horizontal-tb;
-      font-size: 9.5px;
-      letter-spacing: 1.6px;
+      font-size: 8.5px;
+      letter-spacing: 1.4px;
       text-transform: uppercase;
       color: var(--hero-fg-mute);
       text-align: center;
       line-height: 1.4;
+      /* rail content overflows, so this block's top is pinned by the element
+         above; shrinking the type alone lifts its bottom edge ~3px. Push it
+         back down by that amount to keep "VER 0.5" bottom-aligned in the rail. */
+      margin-top: 3px;
     }
 
     /* ---- Top row — brand line (left) + DEMO CTA (right) --------------- */
@@ -522,6 +530,12 @@
       -webkit-text-fill-color: var(--hero-fg);
       -webkit-box-shadow: 0 0 0 1000px #16161a inset;
       caret-color: var(--hero-accent);
+      /* Chrome forces its own font + size on autofilled text; restore the
+         field's mono face so it matches what the user types. !important is
+         required to beat the UA autofill stylesheet. */
+      font-family: var(--mono) !important;
+      font-size: 16px !important;
+      letter-spacing: 0.2px;
       transition: background-color 9999s ease-out, color 9999s ease-out;
     }
     .hero .field button {
@@ -533,6 +547,9 @@
       color: var(--hero-fg-soft);
       border-left-color: var(--hero-rule);
       transition: color 0.34s ease;
+      /* nudge up from the base 11px so the label doesn't read small next to
+         the 16px email input it sits beside */
+      font-size: 12.5px;
     }
     .hero .field button::before {
       content: "";
@@ -1329,6 +1346,26 @@
       if (tone) el.classList.add(tone);
       el.classList.add("show");
     }
+
+    // ---- Keep focused inputs from "jumping away" on mobile -------------------
+    // The page uses CSS scroll-snap (html { scroll-snap-type: y proximity }).
+    // When the soft keyboard opens, the browser scrolls the focused field up
+    // to clear the keyboard — but the snap engine then yanks the page back to
+    // the section start, pulling the input behind the keyboard. Disable snap
+    // while any field is focused; restore it on blur. Desktop snap is untouched.
+    (function () {
+      const root = document.documentElement;
+      document.addEventListener("focusin", function (ev) {
+        if (ev.target && ev.target.matches("input, textarea")) {
+          root.style.scrollSnapType = "none";
+        }
+      });
+      document.addEventListener("focusout", function (ev) {
+        if (ev.target && ev.target.matches("input, textarea")) {
+          root.style.scrollSnapType = "";
+        }
+      });
+    })();
 
     // ---- Modal open / close --------------------------------------------------
     (function () {
