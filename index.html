@@ -409,8 +409,8 @@
     }
     .rail-meta {
       writing-mode: horizontal-tb;
-      font-size: 12px;
-      letter-spacing: 2.0px;
+      font-size: 9.5px;
+      letter-spacing: 1.6px;
       text-transform: uppercase;
       color: var(--hero-fg-mute);
       text-align: center;
@@ -436,9 +436,14 @@
       gap: 32px;
       width: 100%;
     }
-    .form-row .field {
+    .form-row .form-col {
       flex: 0 1 540px;                /* form box ≤540px, can shrink */
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .form-row .form-col .field {
+      width: 100%;
     }
 
     .hero-ver {
@@ -494,14 +499,30 @@
     }
     .hero .field {
       border-color: var(--hero-rule);
-      background: rgba(242, 239, 229, 0.04);
+      background: rgba(242, 239, 229, 0.035);
     }
-    .hero .field:focus-within { border-color: var(--hero-fg); }
+    .hero .field:focus-within {
+      border-color: rgba(242, 239, 229, 0.32);
+      background: rgba(242, 239, 229, 0.05);
+    }
     .hero .field input {
       color: var(--hero-fg);
+      caret-color: var(--hero-accent);
     }
     .hero .field input::placeholder {
       color: var(--hero-fg-mute);
+    }
+    /* Override Chrome/Safari autofill: defaults to a bright light-blue fill
+       that clashes with the dark hero. Inset shadow paints a dim warm tone
+       matching the hero panel; text stays high-contrast paper. */
+    .hero .field input:-webkit-autofill,
+    .hero .field input:-webkit-autofill:hover,
+    .hero .field input:-webkit-autofill:focus,
+    .hero .field input:-webkit-autofill:active {
+      -webkit-text-fill-color: var(--hero-fg);
+      -webkit-box-shadow: 0 0 0 1000px #16161a inset;
+      caret-color: var(--hero-accent);
+      transition: background-color 9999s ease-out, color 9999s ease-out;
     }
     .hero .field button {
       position: relative;
@@ -1083,7 +1104,7 @@
         align-items: flex-start;
         gap: 14px;
       }
-      .form-row .field { flex: 0 1 auto; width: 100%; }
+      .form-row .form-col { flex: 0 1 auto; width: 100%; }
       .hero-ver { text-align: left; }
     }
     @media (max-width: 760px) {
@@ -1228,28 +1249,30 @@
         <div class="hero-foot">
           <div class="invite-eyebrow reveal d6" id="invite">V0.4 · By Invite Only</div>
           <div class="form-row reveal d6">
-            <form class="field" id="requestForm" novalidate>
-              <input
-                type="email"
-                name="email"
-                id="emailInput"
-                placeholder="your.email@somewhere.org"
-                autocomplete="email"
-                required
-              />
-              <button type="submit">
-                <span>Request Code</span>
-                <span class="btn-arr" aria-hidden="true">
-                  <span class="btn-arr-track">
-                    <span>→</span>
-                    <span>→</span>
+            <div class="form-col">
+              <form class="field" id="requestForm" novalidate>
+                <input
+                  type="email"
+                  name="email"
+                  id="emailInput"
+                  placeholder="your.email@somewhere.org"
+                  autocomplete="email"
+                  required
+                />
+                <button type="submit">
+                  <span>Request Code</span>
+                  <span class="btn-arr" aria-hidden="true">
+                    <span class="btn-arr-track">
+                      <span>→</span>
+                      <span>→</span>
+                    </span>
                   </span>
-                </span>
-              </button>
-            </form>
+                </button>
+              </form>
+              <div class="status info" id="requestStatus"></div>
+            </div>
             <div class="hero-ver" aria-hidden="true">Built in Amsterdam · MMXXVI</div>
           </div>
-          <div class="status info" id="requestStatus"></div>
         </div>
 
       </div>
@@ -1588,4 +1611,3 @@
   </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
