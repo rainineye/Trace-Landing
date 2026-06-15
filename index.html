@@ -1166,6 +1166,7 @@
     @media (max-width: 480px) {
       .field input { padding: 12px 14px; font-size: 16px; }   /* keep ≥16px to prevent iOS auto-zoom */
       .field button { padding: 0 16px; font-size: 10px; }
+      .cta-word { display: none; }   /* phones: "Request Code" -> "Request" so the email field reads longer */
     }
 
     /* Very short screens — drop the mono status block to guarantee form fit */
@@ -1291,7 +1292,7 @@
                   required
                 />
                 <button type="submit">
-                  <span>Request</span>
+                  <span>Request<span class="cta-word"> Code</span></span>
                   <span class="btn-arr" aria-hidden="true">
                     <span class="btn-arr-track">
                       <span>→</span>
