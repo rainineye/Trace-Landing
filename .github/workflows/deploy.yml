@@ -1,0 +1,32 @@
+name: Deploy to Cloudflare Workers
+
+# Auto-deploy the landing worker (+ static assets) on every push to main.
+# Only committed files are deployed, so gitignored paths like .claude/ can
+# never leak into the public asset bundle the way a local `wrangler deploy`
+# from the working tree could.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy with Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.90.0"
+          command: deploy
