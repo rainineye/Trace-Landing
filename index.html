@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Trace — Claim Intelligence Infrastructure</title>
-  <meta name="description" content="Trace · An instrument for contested public claims. Not a verdict. Exhibit, don't verify. By invite only." />
+  <title>Trace — Information Intelligence Infrastructure</title>
+  <meta name="description" content="Trace · An instrument for contested public topics. Not a verdict. Exhibit, don't verify. By invite only." />
 
-  <meta property="og:title" content="Trace — Claim Intelligence Infrastructure" />
-  <meta property="og:description" content="An instrument for contested public claims. Not a verdict. Exhibit, don't verify." />
+  <meta property="og:title" content="Trace — Information Intelligence Infrastructure" />
+  <meta property="og:description" content="An instrument for contested public topics. Not a verdict. Exhibit, don't verify." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://traceintelligence.io" />
 
@@ -327,6 +327,48 @@
       z-index: 1;
     }
 
+    /* ---- Vertical word rotator (pair 1 caps) ----------------------------
+       Cycles Attribution -> Contested Topics -> Prediction inside a
+       one-line mask. A 4th slide duplicates "Attribution" so the CSS loop
+       restarts (100% -> 0%) on an identical frame — seamless, no jump.
+       Slightly smaller floor than plain .display-caps so the longest phrase
+       ("CONTESTED TOPICS") stays on one line down to narrow phones.
+       Reduced motion holds statically on "Contested Topics" (anchor term). */
+    /* Two-line mask, in-place crossfade (no long scroll): each slide is
+       absolutely stacked in the same 1.84em box (two caps lines, so the
+       longest slide "Contested Topics" can wrap) and swapped by a fade with a
+       tiny ~0.25em settle — the motion stays within the line, nothing flies
+       up from far below. Font inherited from .display-caps unchanged (no
+       shrink). Three slides phase-shifted by 1/3 of the 12s cycle; delays
+       -1s/3s/7s tile the loop and leave slide 1 already visible at load. */
+    .display-caps.rotator {
+      position: relative;
+      overflow: hidden;
+      height: 1.84em;              /* two caps lines (line-height 0.92) */
+    }
+    .rotator-word {
+      position: absolute;
+      inset: 0;                    /* top/left 0, full width — text wraps normally */
+      height: 1.84em;
+      opacity: 0;
+      will-change: opacity, transform;
+      animation: wordFlip 12s ease-in-out infinite both;
+    }
+    .rotator-word:nth-child(1) { animation-delay: -1s; }
+    .rotator-word:nth-child(2) { animation-delay:  3s; }
+    .rotator-word:nth-child(3) { animation-delay:  7s; }
+    @keyframes wordFlip {
+      0%   { opacity: 0; transform: translateY(0.25em); }
+      6%   { opacity: 1; transform: translateY(0); }
+      33%  { opacity: 1; transform: translateY(0); }
+      39%  { opacity: 0; transform: translateY(-0.25em); }
+      100% { opacity: 0; transform: translateY(-0.25em); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rotator-word { animation: none; opacity: 0; }
+      .rotator-word:nth-child(2) { opacity: 1; }   /* hold on Contested Topics */
+    }
+
     /* ---- Mono "system status" insert between display pairs --------------- */
     .hero-status-block {
       font-family: var(--mono);
@@ -393,7 +435,7 @@
       justify-content: flex-start;       /* cluster anchors to top of rail-accent's space — sits in upper-middle of rail */
       gap: clamp(5px, 1vh, 14px);        /* small gap between barcode and text — scales with vh */
       flex: 1;                            /* fill remaining column so VER 0.5 ends up at bottom */
-      margin-top: clamp(10px, 2vh, 36px); /* gap below "Claim Intelligence Infrastructure" */
+      margin-top: clamp(10px, 2vh, 36px); /* gap below "Information Intelligence Infrastructure" */
       margin-bottom: clamp(10px, 2vh, 36px);  /* gap above VER 0.5 */
     }
 
@@ -1209,7 +1251,7 @@
 
       <!-- Right vertical rail — rotated mono labels -->
       <aside class="hero-rail" aria-hidden="true">
-        <span class="rail-label">Claim Intelligence Infrastructure</span>
+        <span class="rail-label">Information Intelligence Infrastructure</span>
         <span class="rail-label rail-accent">
           <svg class="rail-bar" viewBox="0 0 8 32" preserveAspectRatio="none" aria-hidden="true">
             <g fill="currentColor">
@@ -1246,7 +1288,7 @@
             <span class="hero-brand-wm">Trace</span>
             <span class="hero-brand-divider"></span>
             <span class="hero-brand-meta">
-              Claim Intelligence
+              Information Intelligence
               <span class="sep">·</span>
               <span class="accent">v0.5</span>
               <span class="hero-brand-dev"><span class="sep">·</span> in development</span>
@@ -1262,7 +1304,11 @@
         <div class="hero-display">
           <div class="display-pair reveal d3">
             <span class="display-roman">An instrument for</span>
-            <span class="display-caps">Contested Claims</span>
+            <span class="display-caps rotator" role="text" aria-label="Attribution, Contested Topics, Prediction">
+              <span class="rotator-word" aria-hidden="true">Attribution</span>
+              <span class="rotator-word" aria-hidden="true">Contested Topics</span>
+              <span class="rotator-word" aria-hidden="true">Prediction</span>
+            </span>
           </div>
 
           <div class="hero-status-block reveal d4">
@@ -1279,7 +1325,7 @@
 
         <!-- Bottom row: eyebrow → (form box + ver mark on form's center axis) → status -->
         <div class="hero-foot">
-          <div class="invite-eyebrow reveal d6" id="invite">V0.4 · By Invite Only</div>
+          <div class="invite-eyebrow reveal d6" id="invite">v0.5 · By Invite Only</div>
           <div class="form-row reveal d6">
             <div class="form-col">
               <form class="field" id="requestForm" novalidate>
