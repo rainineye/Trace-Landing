@@ -5,6 +5,7 @@ src/
 migrations/
 .wrangler/
 .devassets/
+.claude/
 wrangler.dev.jsonc
 .git/
 node_modules/
