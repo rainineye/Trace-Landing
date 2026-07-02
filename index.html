@@ -271,6 +271,11 @@
       max-width: 1100px;
       display: flex;
       flex-direction: column;
+      /* Extra breathing room above pair 1 (brand line -> headline) for a
+         stronger "drop-in" entrance. Pair 2 stays bottom-anchored (margin-top:
+         auto), so this space is absorbed from the flexible middle gap and the
+         hero's total height is unchanged. */
+      padding-top: clamp(14px, 2.4vh, 30px);
     }
     /* Pair 2 anchors to the bottom of the display container — auto absorbs
        extra vertical space, so on taller screens the gap above grows. */
@@ -281,11 +286,12 @@
       margin-bottom: clamp(20px, 3vh, 40px);
     }
     .display-pair:last-child { margin-bottom: 0; }
-    /* Pair 2 — italic now matches pair 1 (100%) for full presence;
-       caps still slightly under pair 1 caps (~92%) so pair 1 stays the
-       dominant statement and the hero's overall hierarchy is intact. */
-    .display-pair-tight .display-italic { font-size: clamp(44px, min(8vw, 10vh), 120px); }
-    .display-pair-tight .display-caps   { font-size: clamp(46px, min(8.7vw, 11vh), 132px); }
+    /* Pair 2 — deliberately scaled down (~82% of the previous size) so it reads
+       as a supporting coda beneath the dominant pair 1 statement. Creates a
+       clear visual hierarchy and (as a bonus) fixes the phone case where pair 2
+       caps used to render LARGER than pair 1 caps. */
+    .display-pair-tight .display-italic { font-size: clamp(36px, min(6.6vw, 8.2vh), 98px); }
+    .display-pair-tight .display-caps   { font-size: clamp(38px, min(7.1vw, 9vh), 108px); }
     .display-italic, .display-roman {
       font-family: var(--serif);
       font-size: clamp(44px, min(8vw, 10vh), 120px);
