@@ -375,6 +375,14 @@
       .rotator-word { animation: none; opacity: 0; }
       .rotator-word:nth-child(2) { opacity: 1; }   /* hold on Contested Topics (2 lines) */
     }
+    /* Phones: don't let the breathing mask drift the casefile up and down.
+       "Contested Topics" wraps to two lines here anyway, so hold the mask at
+       two lines and keep the casefile anchored at that position. The word
+       crossfade (wordFlip on .rotator-word) still runs — only the height
+       animation is disabled. */
+    @media (max-width: 768px) {
+      .display-caps.rotator { animation: none; height: 1.84em; }
+    }
 
     /* ---- Mono "system status" insert between display pairs --------------- */
     .hero-status-block {
